@@ -1,5 +1,6 @@
 import React from 'react';
 import { TEAMS } from '../data/teams/index.js';
+import Flag from './Flag.jsx';
 
 const POS_ORDER = { GK: 0, DF: 1, MF: 2, FW: 3 };
 
@@ -12,7 +13,7 @@ export default function SquadView({ teamCode, onConfirm, onBack }) {
   return (
     <div>
       <h2>
-        {team.flag} {team.name} 스쿼드
+        <Flag code={team.code} size={26} /> {team.name} 스쿼드
         <span className="badge">FIFA 랭킹 {team.ranking}위</span>
         <span className="badge">팀 능력치 {team.rating}</span>
       </h2>

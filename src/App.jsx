@@ -9,14 +9,16 @@ import {
   qualifiedTeams,
   ROUND_NAMES,
 } from './engine/tournament.js';
-import { simulateMatch } from './engine/matchEngine.js';
+import { createMatch, simulateMatch, rollConditions } from './engine/matchEngine.js';
 import { saveGame, loadGame, clearGame } from './engine/storage.js';
 import TeamSelect from './components/TeamSelect.jsx';
 import SquadView from './components/SquadView.jsx';
 import Standings from './components/Standings.jsx';
+import LineupScreen from './components/LineupScreen.jsx';
 import MatchView from './components/MatchView.jsx';
 import Bracket from './components/Bracket.jsx';
 import EndScreen from './components/EndScreen.jsx';
+import Flag from './components/Flag.jsx';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
@@ -49,8 +51,8 @@ export default function App() {
   const [screen, setScreen] = useState('home');
   const [game, setGame] = useState(null);
   const [previewTeam, setPreviewTeam] = useState(null);
-  const [liveResult, setLiveResult] = useState(null);
-  const [liveLabel, setLiveLabel] = useState('');
+  const [pending, setPending] = useState(null); // 경기 준비 정보
+  const [liveMatch, setLiveMatch] = useState(null); // 진행 중인 라이브 경기 객체
   const [showAllGroups, setShowAllGroups] = useState(false);
   const [hasSave, setHasSave] = useState(false);
 
@@ -68,6 +70,30 @@ export default function App() {
     [game]
   );
 
+  // ── 경기 준비 (감독 모드 진입) ────────────────────────────────
+  const prepMatch = (fix, label, knockout) => {
+    setPending({
+      home: fix.home,
+      away: fix.away,
+      knockout,
+      label,
+      mySide: fix.home === game.myTeam ? 'home' : 'away',
+      myConditions: rollConditions(TEAMS[game.myTeam]),
+    });
+    setScreen('lineup');
+  };
+
+  const kickoff = (setup) => {
+    const opts = { knockout: pending.knockout };
+    opts[`${pending.mySide}Setup`] = {
+      ...setup,
+      conditions: pending.myConditions,
+      manual: true,
+    };
+    setLiveMatch(createMatch(TEAMS[pending.home], TEAMS[pending.away], opts));
+    setScreen('match');
+  };
+
   // ── 조별리그 진행 ──────────────────────────────────────────────
   const myGroupFixture = () => {
     if (!game || game.phase !== 'group' || game.matchday > 3) return null;
@@ -76,13 +102,8 @@ export default function App() {
     );
   };
 
-  const playGroupMatch = () => {
-    const fix = myGroupFixture();
-    const res = simulateMatch(TEAMS[fix.home], TEAMS[fix.away], { knockout: false });
-    setLiveResult(res);
-    setLiveLabel(`조별리그 ${myGroup}조 · ${game.matchday}차전`);
-    setScreen('match');
-  };
+  const playGroupMatch = () =>
+    prepMatch(myGroupFixture(), `조별리그 ${myGroup}조 ${game.matchday}차전`, false);
 
   const finishGroupMatch = (res) => {
     const g = clone(game);
@@ -90,7 +111,7 @@ export default function App() {
     for (const gk of GROUP_KEYS) {
       for (const fix of groupFixtures(gk)[md - 1]) {
         const isMine = fix.home === res.home && fix.away === res.away;
-        const r = isMine ? res : simulateMatch(TEAMS[fix.home], TEAMS[fix.away], { knockout: false });
+        const r = isMine ? res : simulateMatch(TEAMS[fix.home], TEAMS[fix.away]);
         g.groupResults[gk].push({ ...strip(r), matchday: md });
       }
     }
@@ -110,7 +131,8 @@ export default function App() {
       }
     }
     setGame(g);
-    setLiveResult(null);
+    setLiveMatch(null);
+    setPending(null);
     setScreen('hub');
   };
 
@@ -123,12 +145,7 @@ export default function App() {
         )
       : null;
 
-  const playKoMatch = () => {
-    const res = simulateMatch(TEAMS[myKoMatch.home], TEAMS[myKoMatch.away], { knockout: true });
-    setLiveResult(res);
-    setLiveLabel(`토너먼트 · ${currentRound.name}`);
-    setScreen('match');
-  };
+  const playKoMatch = () => prepMatch(myKoMatch, `토너먼트 ${currentRound.name}`, true);
 
   const advanceRoundState = (g) => {
     const round = g.rounds[g.rounds.length - 1];
@@ -158,7 +175,8 @@ export default function App() {
     }
     advanceRoundState(g);
     setGame(g);
-    setLiveResult(null);
+    setLiveMatch(null);
+    setPending(null);
     setScreen(g.phase === 'done' ? 'end' : 'hub');
   };
 
@@ -202,7 +220,7 @@ export default function App() {
       {screen === 'home' && (
         <div className="hero">
           <h1>TACTIX <span>2026</span></h1>
-          <p>48개국, 104경기, 단 하나의 트로피. 당신의 팀을 세계 정상으로 이끄세요.</p>
+          <p>48개국, 104경기, 단 하나의 트로피.<br />선발·전술·교체까지, 당신이 감독입니다.</p>
           <div className="actions">
             <button className="btn big" onClick={startNew}>새 게임 시작</button>
             {hasSave && <button className="btn big ghost" onClick={resume}>이어하기</button>}
@@ -223,10 +241,16 @@ export default function App() {
         />
       )}
 
-      {screen === 'match' && liveResult && (
+      {screen === 'lineup' && pending && (
+        <LineupScreen pending={pending} onKickoff={kickoff} onBack={() => { setPending(null); setScreen('hub'); }} />
+      )}
+
+      {screen === 'match' && liveMatch && (
         <MatchView
-          result={liveResult}
-          roundLabel={liveLabel}
+          key={`${pending?.label}-${pending?.home}-${pending?.away}`}
+          match={liveMatch}
+          mySide={pending?.mySide}
+          roundLabel={pending?.label || ''}
           onFinish={game.phase === 'group' ? finishGroupMatch : finishKoMatch}
         />
       )}
@@ -260,13 +284,14 @@ function Hub({
 
   return (
     <div>
-      <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <div>
-          <strong style={{ fontSize: '1.15rem' }}>{me.flag} {me.name}</strong>
+          <Flag code={me.code} size={22} />{' '}
+          <strong style={{ fontSize: '1.15rem' }}>{me.name}</strong>
           <span className="badge">
             {game.phase === 'group' ? `조별리그 ${myGroup}조 · ${Math.min(game.matchday, 3)}차전` : '토너먼트'}
           </span>
-          {game.eliminated && <span className="badge" style={{ color: 'var(--red)' }}>탈락</span>}
+          {game.eliminated && <span className="badge danger-text">탈락</span>}
         </div>
         <button className="btn danger" onClick={onRestart}>처음으로</button>
       </div>
@@ -329,18 +354,18 @@ function NextFixture({ fixture, onPlay, label }) {
   const h = TEAMS[fixture.home];
   const a = TEAMS[fixture.away];
   return (
-    <div className="panel">
-      <div style={{ textAlign: 'center', color: 'var(--dim)', fontSize: '0.85rem' }}>다음 경기 · {label}</div>
+    <div className="panel next-fixture">
+      <div className="matchup-label">다음 경기 · {label}</div>
       <div className="fixture">
-        <span className="side">{h.flag} {h.name}</span>
+        <span className="side"><Flag code={h.code} size={28} /> {h.name}</span>
         <span className="vs">VS</span>
-        <span className="side">{a.name} {a.flag}</span>
+        <span className="side">{a.name} <Flag code={a.code} size={28} /></span>
       </div>
-      <div style={{ textAlign: 'center', color: 'var(--dim)', fontSize: '0.8rem', marginBottom: 12 }}>
+      <div className="fixture-meta">
         FIFA 랭킹 {h.ranking}위 (전력 {h.rating}) vs {a.ranking}위 (전력 {a.rating})
       </div>
       <div className="match-actions">
-        <button className="btn big" onClick={onPlay}>⚽ 경기 시작</button>
+        <button className="btn big" onClick={onPlay}>📋 경기 준비 (선발·전술)</button>
       </div>
     </div>
   );
@@ -352,7 +377,7 @@ function GroupResults({ results }) {
     <ul className="results-list" style={{ marginTop: 12 }}>
       {results.map((r, i) => (
         <li key={i}>
-          {r.matchday}차전 — {TEAMS[r.home].flag} {TEAMS[r.home].name} {r.homeGoals} : {r.awayGoals} {TEAMS[r.away].name} {TEAMS[r.away].flag}
+          {r.matchday}차전 — <Flag code={r.home} size={14} /> {TEAMS[r.home].name} {r.homeGoals} : {r.awayGoals} {TEAMS[r.away].name} <Flag code={r.away} size={14} />
           {r.upset && <span className="upset-tag"> 🚨 이변!</span>}
         </li>
       ))}

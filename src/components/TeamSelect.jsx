@@ -1,5 +1,6 @@
 import React from 'react';
 import { TEAM_LIST } from '../data/teams/index.js';
+import Flag from './Flag.jsx';
 
 const CONF_ORDER = [
   ['UEFA', '유럽 (UEFA)'],
@@ -27,7 +28,7 @@ export default function TeamSelect({ onSelect }) {
             <div className="team-grid">
               {teams.map((t) => (
                 <button key={t.code} className="team-card" onClick={() => onSelect(t.code)}>
-                  <span className="flag">{t.flag}</span>
+                  <Flag code={t.code} size={30} />
                   <span>
                     <div className="name">{t.name}</div>
                     <div className="meta">FIFA 랭킹 {t.ranking}위</div>

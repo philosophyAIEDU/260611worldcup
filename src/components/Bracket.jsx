@@ -1,5 +1,6 @@
 import React from 'react';
 import { TEAMS } from '../data/teams/index.js';
+import Flag from './Flag.jsx';
 
 export default function Bracket({ rounds, myTeam }) {
   return (
@@ -15,11 +16,11 @@ export default function Bracket({ rounds, myTeam }) {
             return (
               <div className={`bmatch ${mine ? 'mine' : ''}`} key={i}>
                 <div className="row">
-                  <span className={r && r.winner === m.home ? 'win' : ''}>{h.flag} {h.name}</span>
+                  <span className={r && r.winner === m.home ? 'win' : ''}><Flag code={m.home} size={13} /> {h.name}</span>
                   <span>{r ? r.homeGoals : ''}{r && r.shootout ? ` (${r.shootout.homeScore})` : ''}</span>
                 </div>
                 <div className="row">
-                  <span className={r && r.winner === m.away ? 'win' : ''}>{a.flag} {a.name}</span>
+                  <span className={r && r.winner === m.away ? 'win' : ''}><Flag code={m.away} size={13} /> {a.name}</span>
                   <span>{r ? r.awayGoals : ''}{r && r.shootout ? ` (${r.shootout.awayScore})` : ''}</span>
                 </div>
               </div>

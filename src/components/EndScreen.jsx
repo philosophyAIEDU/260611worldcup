@@ -1,6 +1,7 @@
 import React from 'react';
 import { TEAMS } from '../data/teams/index.js';
 import Bracket from './Bracket.jsx';
+import Flag from './Flag.jsx';
 
 export default function EndScreen({ game, onRestart }) {
   const champ = game.champion ? TEAMS[game.champion] : null;
@@ -13,15 +14,15 @@ export default function EndScreen({ game, onRestart }) {
         <div className="trophy">{iWon ? '🏆' : '🎬'}</div>
         {iWon ? (
           <>
-            <h2>{me.flag} {me.name}, 2026 월드컵 우승!</h2>
+            <h2><Flag code={me.code} size={30} /> {me.name}, 2026 월드컵 우승!</h2>
             <p>당신의 지휘 아래 {me.name}이(가) 세계 정상에 올랐습니다. 역사에 남을 여정이었습니다.</p>
           </>
         ) : (
           <>
             <h2>대회 종료</h2>
             <p>
-              {champ && <>우승: {champ.flag} {champ.name} · </>}
-              {me.flag} {me.name}의 여정: {game.runSummary}
+              {champ && <>우승: <Flag code={champ.code} size={16} /> {champ.name} · </>}
+              <Flag code={me.code} size={16} /> {me.name}의 여정: {game.runSummary}
             </p>
           </>
         )}

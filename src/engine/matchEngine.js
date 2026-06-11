@@ -1,62 +1,110 @@
-// 경기 시뮬레이션 엔진.
-// FIFA 랭킹 기반 팀 능력치 + 당일 컨디션(0.70~1.00) + 스타 폼 보너스 → 분 단위 이벤트 생성.
+// 경기 시뮬레이션 엔진 — 분 단위 실시간 진행.
+// FIFA 랭킹 기반 팀 능력치 + 당일 컨디션(0.70~1.00) + 스타 폼 + 전술/포메이션.
+// createMatch()가 반환하는 객체를 advance()로 한 분씩 진행시키며,
+// 사용자 측은 경기 중 makeSub()/setMentality()로 개입할 수 있다.
 
 import { goalText, miscText } from './commentary.js';
 
 const rand = () => Math.random();
 const pick = (arr) => arr[Math.floor(rand() * arr.length)];
 
-function weightedPick(players, weightFn) {
-  const weights = players.map((p) => Math.max(0.1, weightFn(p)));
+function weightedPick(items, weightFn) {
+  const weights = items.map((x) => Math.max(0.1, weightFn(x)));
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rand() * total;
-  for (let i = 0; i < players.length; i++) {
+  for (let i = 0; i < items.length; i++) {
     r -= weights[i];
-    if (r <= 0) return players[i];
+    if (r <= 0) return items[i];
   }
-  return players[players.length - 1];
+  return items[items.length - 1];
 }
 
-// 경기 출전 명단 구성: 컨디션 부여 후 포지션별 베스트11 선발
-export function prepareSide(team) {
-  const squad = team.players.map((p) => ({
-    ...p,
-    condition: Math.round((0.7 + rand() * 0.3) * 100) / 100,
-  }));
-  const byPos = (pos, n) =>
+// ── 전술 정의 ────────────────────────────────────────────────────
+// atk: 자기 팀 득점 확률 배수, def: 상대 팀 득점 확률 배수(낮을수록 수비적)
+export const FORMATIONS = {
+  '4-3-3': { DF: 4, MF: 3, FW: 3, atk: 1.05, def: 1.0, label: '4-3-3 (공격 축구)' },
+  '4-4-2': { DF: 4, MF: 4, FW: 2, atk: 1.0, def: 0.97, label: '4-4-2 (클래식 밸런스)' },
+  '4-2-3-1': { DF: 4, MF: 5, FW: 1, atk: 0.95, def: 0.92, label: '4-2-3-1 (중원 장악)' },
+  '3-5-2': { DF: 3, MF: 5, FW: 2, atk: 1.08, def: 1.08, label: '3-5-2 (하이리스크 공격)' },
+  '5-3-2': { DF: 5, MF: 3, FW: 2, atk: 0.9, def: 0.87, label: '5-3-2 (선수비 역습)' },
+};
+
+export const MENTALITIES = {
+  attacking: { atk: 1.22, def: 1.18, label: '공격적' },
+  balanced: { atk: 1.0, def: 1.0, label: '균형' },
+  defensive: { atk: 0.8, def: 0.84, label: '수비적' },
+};
+
+export const MAX_SUBS = 5;
+
+// ── 컨디션 & 라인업 ──────────────────────────────────────────────
+export function rollConditions(team) {
+  return Object.fromEntries(
+    team.players.map((p) => [p.name, Math.round((0.7 + rand() * 0.3) * 100) / 100])
+  );
+}
+
+// 포메이션에 맞춰 (능력치×컨디션) 최상위 선수로 베스트11 자동 선발 → 이름 배열
+export function autoLineup(squad, formation) {
+  const f = FORMATIONS[formation];
+  const best = (pos, n) =>
     squad
       .filter((p) => p.position === pos)
       .sort((a, b) => b.overall * b.condition - a.overall * a.condition)
       .slice(0, n);
-  const eleven = [...byPos('GK', 1), ...byPos('DF', 4), ...byPos('MF', 3), ...byPos('FW', 3)];
+  return [...best('GK', 1), ...best('DF', f.DF), ...best('MF', f.MF), ...best('FW', f.FW)].map(
+    (p) => p.name
+  );
+}
+
+function buildSide(team, setup = {}) {
+  const conditions = setup.conditions || rollConditions(team);
+  const squad = team.players.map((p) => ({ ...p, condition: conditions[p.name] ?? 0.85 }));
+  const formation = setup.formation || pick(['4-3-3', '4-4-2', '4-2-3-1']);
+  const lineupNames = setup.lineup || autoLineup(squad, formation);
+  const eleven = lineupNames.map((n) => squad.find((p) => p.name === n)).filter(Boolean);
   const bench = squad.filter((p) => !eleven.includes(p));
 
-  // 팀 전력 = 팀 능력치 60% + 베스트11 (능력치×컨디션) 평균 40%
-  const elevenAvg = eleven.reduce((s, p) => s + p.overall * p.condition, 0) / eleven.length;
-  let strength = team.rating * 0.6 + elevenAvg * 0.4;
+  const side = {
+    team,
+    squad,
+    eleven,
+    bench,
+    formation,
+    mentality: setup.mentality || 'balanced',
+    manual: !!setup.manual,
+    subsUsed: 0,
+    upsetBonus: 0,
+  };
+  recalcStrength(side);
+  return side;
+}
 
-  // 스타 폼 보너스: 컨디션 좋은 스타플레이어가 전력을 끌어올린다
-  const stars = eleven.filter((p) => p.isStar);
-  const hotStar = stars.reduce((best, p) => (p.condition > (best?.condition ?? 0) ? p : best), null);
+function recalcStrength(side) {
+  const avg = side.eleven.reduce((s, p) => s + p.overall * p.condition, 0) / side.eleven.length;
+  let strength = side.team.rating * 0.6 + avg * 0.4;
+  const stars = side.eleven.filter((p) => p.isStar);
+  const hotStar = stars.reduce((b, p) => (p.condition > (b?.condition ?? 0) ? p : b), null);
   if (hotStar && hotStar.condition >= 0.9) strength += 6 * (hotStar.condition - 0.9) * 10 + 2;
   else if (hotStar && hotStar.condition >= 0.82) strength += 1.5;
-
-  return { team, eleven, bench, strength, hotStar, stars };
+  side.hotStar = hotStar;
+  side.strength = strength + side.upsetBonus;
 }
 
-// 업셋 메커니즘: 랭킹 20위 이상 차이 + 약팀 스타 컨디션 0.90 이상 → 약팀 전력 대폭 보정
+// 업셋 메커니즘: 랭킹 20위 이상 차이 + 약팀 스타 컨디션 0.90 이상 → 약팀 전력 보정
 function applyUpset(home, away) {
-  const diff = home.team.ranking - away.team.ranking; // 양수면 home이 약팀
-  const tryBoost = (weak, strong) => {
+  const diff = home.team.ranking - away.team.ranking;
+  const boost = (weak, strong) => {
     if (weak.hotStar && weak.hotStar.condition >= 0.9) {
-      weak.strength += Math.min(6, (strong.strength - weak.strength) * 0.35 + 1.5);
-      weak.upsetMode = true;
+      weak.upsetBonus = Math.min(6, (strong.strength - weak.strength) * 0.35 + 1.5);
+      recalcStrength(weak);
     }
   };
-  if (diff >= 20) tryBoost(home, away);
-  else if (diff <= -20) tryBoost(away, home);
+  if (diff >= 20) boost(home, away);
+  else if (diff <= -20) boost(away, home);
 }
 
+// ── 이벤트 생성 헬퍼 ─────────────────────────────────────────────
 const GOAL_TYPE_KEYS = ['counter', 'freekick', 'corner', 'penalty', 'solo', 'combo', 'longshot', 'header', 'rebound'];
 
 function pickGoalType() {
@@ -71,121 +119,182 @@ function pickScorer(side, type) {
 }
 
 function pickAssister(side, scorer) {
+  if (rand() < 0.18) return null;
   const pool = side.eleven.filter((p) => p !== scorer && p.position !== 'GK');
-  if (rand() < 0.18) return null; // 단독 골
   return weightedPick(pool, (p) => (p.passing / 50) * p.condition * (p.position === 'MF' ? 1.6 : 1));
 }
 
-function pickOutfielder(side) {
-  return pick(side.eleven.filter((p) => p.position !== 'GK'));
-}
+const pickOutfielder = (side) => pick(side.eleven.filter((p) => p.position !== 'GK'));
 
-// 90분(연장 시 120분) 경기 시뮬레이션. knockout=true면 무승부 시 연장+승부차기.
-export function simulateMatch(homeTeam, awayTeam, { knockout = false } = {}) {
-  const home = prepareSide(homeTeam);
-  const away = prepareSide(awayTeam);
+// ── 경기 객체 ────────────────────────────────────────────────────
+// opts: { knockout, homeSetup, awaySetup }
+// setup: { conditions, lineup, formation, mentality, manual }
+export function createMatch(homeTeam, awayTeam, opts = {}) {
+  const home = buildSide(homeTeam, opts.homeSetup);
+  const away = buildSide(awayTeam, opts.awaySetup);
   applyUpset(home, away);
 
-  const events = [];
-  let hg = 0;
-  let ag = 0;
-  const scorers = [];
+  const m = {
+    homeTeam,
+    awayTeam,
+    home,
+    away,
+    knockout: !!opts.knockout,
+    minute: 0,
+    finished: false,
+    extraTime: false,
+    hg: 0,
+    ag: 0,
+    events: [],
+    scorers: [],
+    shootout: null,
+  };
 
-  const push = (minute, type, side, text) =>
-    events.push({ minute, type, side, text, score: [hg, ag] });
+  const push = (out, minute, type, side, text) => {
+    const ev = { minute, type, side, text, score: [m.hg, m.ag] };
+    m.events.push(ev);
+    out.push(ev);
+  };
 
-  // 분당 골 기대치: 총 ~2.6골/90분을 전력비로 배분
-  const total = home.strength + away.strength;
-  const edge = (home.strength - away.strength) / total; // -? ~ +?
-  const homeGoalP = (2.6 / 90) * (0.5 + edge * 2.6) ;
-  const awayGoalP = (2.6 / 90) * (0.5 - edge * 2.6);
+  const goalProb = (atkSide, defSide) => {
+    const total = home.strength + away.strength;
+    const edge = (atkSide.strength - defSide.strength) / total;
+    const p =
+      (2.6 / 90) * (0.5 + edge * 2.6) *
+      FORMATIONS[atkSide.formation].atk * MENTALITIES[atkSide.mentality].atk *
+      FORMATIONS[defSide.formation].def * MENTALITIES[defSide.mentality].def;
+    return Math.max(0.004, p);
+  };
 
-  const simMinute = (minute) => {
-    for (const [side, sd, gp] of [['home', home, homeGoalP], ['away', away, awayGoalP]]) {
-      const opp = side === 'home' ? away : home;
+  const simMinute = (minute, out) => {
+    for (const [sideKey, sd, opp] of [['home', home, away], ['away', away, home]]) {
       const r = rand();
-      if (r < Math.max(0.004, gp)) {
+      if (r < goalProb(sd, opp)) {
         const type = pickGoalType();
         const scorer = pickScorer(sd, type);
         const assister = type === 'penalty' || type === 'freekick' || type === 'solo' ? null : pickAssister(sd, scorer);
-        if (side === 'home') hg++; else ag++;
-        scorers.push({ minute, side, name: scorer.name, team: sd.team.code });
-        push(minute, 'goal', side,
-          `${goalText(type, scorer, assister)} ${sd.team.flag} ${homeTeam.name} ${hg}-${ag} ${awayTeam.name}`);
+        if (sideKey === 'home') m.hg++; else m.ag++;
+        m.scorers.push({ minute, side: sideKey, name: scorer.name, team: sd.team.code });
+        push(out, minute, 'goal', sideKey,
+          `${goalText(type, scorer, assister)} ⚽ ${homeTeam.name} ${m.hg}-${m.ag} ${awayTeam.name}`);
       } else if (r < 0.045) {
         const p = pickOutfielder(sd);
-        if (rand() < 0.5) push(minute, 'chance', side, miscText('chance', { p: p.name }));
-        else push(minute, 'save', side, miscText('save', { p: p.name, gk: opp.eleven[0].name }));
+        if (rand() < 0.5) push(out, minute, 'chance', sideKey, miscText('chance', { p: p.name }));
+        else push(out, minute, 'save', sideKey, miscText('save', { p: p.name, gk: opp.eleven[0].name }));
       } else if (r < 0.065) {
         const p = pickOutfielder(sd);
-        if (rand() < 0.3) push(minute, 'yellow', side, miscText('yellow', { p: p.name }));
-        else push(minute, 'foul', side, miscText('foul', { p: p.name }));
+        if (rand() < 0.3) push(out, minute, 'yellow', sideKey, miscText('yellow', { p: p.name }));
+        else push(out, minute, 'foul', sideKey, miscText('foul', { p: p.name }));
       } else if (r < 0.072) {
-        push(minute, 'pressure', side, miscText('pressure', { t: sd.team.name }));
+        push(out, minute, 'pressure', sideKey, miscText('pressure', { t: sd.team.name }));
       }
     }
-    // 교체 (60~80분 사이 가끔)
+    // AI 측 자동 교체
     if (minute >= 60 && minute <= 82 && rand() < 0.035) {
       const sd = rand() < 0.5 ? home : away;
-      const out = pickOutfielder(sd);
-      const sub = sd.bench.find((b) => b.position === out.position);
-      if (sub) {
-        sd.eleven[sd.eleven.indexOf(out)] = sub;
-        sd.bench.splice(sd.bench.indexOf(sub), 1);
-        push(minute, 'sub', sd === home ? 'home' : 'away', miscText('sub', { t: sd.team.name, out: out.name, in: sub.name }));
+      if (!sd.manual && sd.subsUsed < MAX_SUBS) {
+        const out2 = pickOutfielder(sd);
+        const sub = sd.bench.find((b) => b.position === out2.position);
+        if (sub) doSub(sd, out2, sub, minute, out);
       }
     }
   };
 
-  push(0, 'info', null, miscText('kickoff'));
-  for (let m = 1; m <= 45; m++) simMinute(m);
-  push(45, 'info', null, miscText('halftime'));
-  push(46, 'info', null, miscText('secondHalf'));
-  for (let m = 46; m <= 90; m++) simMinute(m);
-
-  let extraTime = false;
-  let shootout = null;
-
-  if (knockout && hg === ag) {
-    extraTime = true;
-    push(90, 'info', null, miscText('extraStart'));
-    for (let m = 91; m <= 105; m++) simMinute(m);
-    push(105, 'info', null, miscText('extraHalf'));
-    for (let m = 106; m <= 120; m++) simMinute(m);
-    if (hg === ag) {
-      push(120, 'info', null, miscText('penaltiesStart'));
-      shootout = simulateShootout(home, away);
-    }
-  }
-  push(extraTime ? 120 : 90, 'end', null, miscText('fulltime'));
-
-  let winner = null;
-  if (hg > ag) winner = homeTeam.code;
-  else if (ag > hg) winner = awayTeam.code;
-  else if (shootout) winner = shootout.homeScore > shootout.awayScore ? homeTeam.code : awayTeam.code;
-
-  return {
-    home: homeTeam.code,
-    away: awayTeam.code,
-    homeGoals: hg,
-    awayGoals: ag,
-    events,
-    scorers,
-    extraTime,
-    shootout,
-    winner,
-    upset:
-      (winner === homeTeam.code && homeTeam.ranking - awayTeam.ranking >= 20) ||
-      (winner === awayTeam.code && awayTeam.ranking - homeTeam.ranking >= 20),
+  const doSub = (sd, outP, inP, minute, out) => {
+    sd.eleven[sd.eleven.indexOf(outP)] = inP;
+    sd.bench.splice(sd.bench.indexOf(inP), 1);
+    sd.bench.push(outP);
+    sd.subsUsed++;
+    recalcStrength(sd);
+    push(out, minute, 'sub', sd === home ? 'home' : 'away',
+      miscText('sub', { t: sd.team.name, out: outP.name, in: inP.name }));
   };
+
+  // 한 분 진행. 이번 호출에서 생성된 이벤트 배열 반환.
+  m.advance = () => {
+    if (m.finished) return [];
+    const out = [];
+    if (m.minute === 0) push(out, 0, 'info', null, miscText('kickoff'));
+    m.minute++;
+    if (m.minute === 46) push(out, 46, 'info', null, miscText('secondHalf'));
+    simMinute(m.minute, out);
+
+    if (m.minute === 45) push(out, 45, 'info', null, miscText('halftime'));
+    if (m.minute === 90) {
+      if (!m.knockout || m.hg !== m.ag) {
+        push(out, 90, 'end', null, miscText('fulltime'));
+        m.finished = true;
+      } else {
+        m.extraTime = true;
+        push(out, 90, 'info', null, miscText('extraStart'));
+      }
+    }
+    if (m.minute === 105 && m.extraTime) push(out, 105, 'info', null, miscText('extraHalf'));
+    if (m.minute === 120) {
+      if (m.hg === m.ag) {
+        push(out, 120, 'info', null, miscText('penaltiesStart'));
+        m.shootout = simulateShootout(home, away);
+        for (const line of m.shootout.log) push(out, 120, 'shootout', null, line);
+      }
+      push(out, 120, 'end', null, miscText('fulltime'));
+      m.finished = true;
+    }
+    return out;
+  };
+
+  // 사용자 교체. 성공 시 true.
+  m.makeSub = (sideKey, outName, inName) => {
+    const sd = sideKey === 'home' ? home : away;
+    if (sd.subsUsed >= MAX_SUBS || m.finished) return false;
+    const outP = sd.eleven.find((p) => p.name === outName);
+    const inP = sd.bench.find((p) => p.name === inName);
+    if (!outP || !inP || outP.position !== inP.position) return false;
+    const out = [];
+    doSub(sd, outP, inP, Math.max(1, m.minute), out);
+    return out;
+  };
+
+  m.setMentality = (sideKey, mentality) => {
+    const sd = sideKey === 'home' ? home : away;
+    if (MENTALITIES[mentality]) sd.mentality = mentality;
+  };
+
+  m.result = () => {
+    let winner = null;
+    if (m.hg > m.ag) winner = homeTeam.code;
+    else if (m.ag > m.hg) winner = awayTeam.code;
+    else if (m.shootout)
+      winner = m.shootout.homeScore > m.shootout.awayScore ? homeTeam.code : awayTeam.code;
+    return {
+      home: homeTeam.code,
+      away: awayTeam.code,
+      homeGoals: m.hg,
+      awayGoals: m.ag,
+      events: m.events,
+      scorers: m.scorers,
+      extraTime: m.extraTime,
+      shootout: m.shootout,
+      winner,
+      upset:
+        (winner === homeTeam.code && homeTeam.ranking - awayTeam.ranking >= 20) ||
+        (winner === awayTeam.code && awayTeam.ranking - homeTeam.ranking >= 20),
+    };
+  };
+
+  return m;
 }
 
-// 승부차기: 키커의 슈팅/종합 능력치 기반 성공 확률 (약 65~90%)
+// AI vs AI 경기를 끝까지 즉시 진행
+export function simulateMatch(homeTeam, awayTeam, opts = {}) {
+  const m = createMatch(homeTeam, awayTeam, opts);
+  while (!m.finished) m.advance();
+  return m.result();
+}
+
+// ── 승부차기: 키커의 슈팅 능력치 기반 성공 확률 ──────────────────
 function simulateShootout(home, away) {
   const kickers = (sd) =>
-    sd.eleven
-      .filter((p) => p.position !== 'GK')
-      .sort((a, b) => b.shooting - a.shooting);
+    sd.eleven.filter((p) => p.position !== 'GK').sort((a, b) => b.shooting - a.shooting);
   const hk = kickers(home);
   const ak = kickers(away);
   const log = [];
@@ -200,10 +309,9 @@ function simulateShootout(home, away) {
   const doKick = (sd, kicker, oppGk) => {
     const ok = kick(kicker, oppGk);
     if (sd === home) { if (ok) hs++; } else if (ok) as++;
-    log.push(`${sd.team.flag} ${kicker.name} ${ok ? '성공! ⚽' : '실축… ❌'} (${hs}-${as})`);
+    log.push(`${sd.team.name} ${kicker.name} ${ok ? '성공! ⚽' : '실축… ❌'} (${hs}-${as})`);
   };
 
-  // 기본 5라운드 (조기 확정 시 종료)
   let settled = false;
   for (let i = 0; i < 5 && !settled; i++) {
     doKick(home, hk[i % hk.length], away.eleven[0]);
@@ -211,14 +319,11 @@ function simulateShootout(home, away) {
     doKick(away, ak[i % ak.length], home.eleven[0]);
     if (hs > as + (5 - i - 1) || as > hs + (5 - i - 1)) { settled = true; break; }
   }
-
-  // 서든데스
   let round = 5;
   while (hs === as) {
     doKick(home, hk[round % hk.length], away.eleven[0]);
     doKick(away, ak[round % ak.length], home.eleven[0]);
     round++;
   }
-
   return { homeScore: hs, awayScore: as, log };
 }

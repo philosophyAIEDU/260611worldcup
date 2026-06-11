@@ -1,5 +1,6 @@
 import React from 'react';
 import { TEAMS } from '../data/teams/index.js';
+import Flag from './Flag.jsx';
 
 export default function Standings({ rows, myTeam, highlightQualified }) {
   return (
@@ -20,7 +21,7 @@ export default function Standings({ rows, myTeam, highlightQualified }) {
               className={`${r.code === myTeam ? 'me' : ''} ${highlightQualified && i < 2 ? 'qualified' : ''}`}
             >
               <td>{i + 1}</td>
-              <td>{t.flag} {t.name}</td>
+              <td><Flag code={t.code} size={15} /> {t.name}</td>
               <td className="num">{r.played}</td>
               <td className="num">{r.won}</td>
               <td className="num">{r.drawn}</td>
