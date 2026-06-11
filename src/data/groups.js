@@ -10,9 +10,9 @@ export const GROUPS = {
   F: ['NED', 'JPN', 'SWE', 'TUN'],
   G: ['BEL', 'EGY', 'IRN', 'NZL'],
   H: ['ESP', 'CPV', 'KSA', 'URU'],
-  I: ['FRA', 'SEN', 'COD', 'NOR'],
+  I: ['FRA', 'SEN', 'IRQ', 'NOR'],
   J: ['ARG', 'ALG', 'AUT', 'JOR'],
-  K: ['POR', 'IRQ', 'UZB', 'COL'],
+  K: ['POR', 'COD', 'UZB', 'COL'],
   L: ['ENG', 'CRO', 'GHA', 'PAN'],
 };
 
