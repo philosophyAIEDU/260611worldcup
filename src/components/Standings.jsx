@@ -6,6 +6,7 @@ import Flag from './Flag.jsx';
 export default function Standings({ rows, myTeam, highlightQualified }) {
   const { t, tn } = useLang();
   return (
+    <div className="table-scroll">
     <table>
       <thead>
         <tr>
@@ -36,5 +37,6 @@ export default function Standings({ rows, myTeam, highlightQualified }) {
         })}
       </tbody>
     </table>
+    </div>
   );
 }

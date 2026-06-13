@@ -20,6 +20,7 @@ export default function SquadView({ teamCode, onConfirm, onBack }) {
         <span className="badge">{t('squad.teamRating', { n: team.rating })}</span>
       </h2>
       <div className="panel" style={{ marginTop: 14 }}>
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
@@ -49,6 +50,7 @@ export default function SquadView({ teamCode, onConfirm, onBack }) {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
       <div className="match-actions">
         <button className="btn ghost" onClick={onBack}>{t('squad.other')}</button>

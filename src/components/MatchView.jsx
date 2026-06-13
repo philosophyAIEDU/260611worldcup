@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
 import { FORMATIONS, MENTALITIES, PLAYSTYLES, MAX_SUBS } from '../engine/matchEngine.js';
-import { formationLabel, mentalityLabel, playstyleLabel } from '../engine/labels.js';
+import { formationLabel, mentalityLabel, playstyleLabel, posLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
@@ -229,7 +229,7 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
                       className={`p-row ${pickedOut === p.name ? 'selected' : ''}`}
                       onClick={() => setPickedOut(pickedOut === p.name ? null : p.name)}
                     >
-                      <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
+                      <span className={`pos-chip pos-${p.position}`}>{posLabel(p, mine.eleven)}</span>
                       <span className="p-name">{pn(p)}{p.isStar && <span className="star"> ★</span>}</span>
                       <span className="p-ovr">{p.overall}</span>
                       <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>

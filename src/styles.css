@@ -49,6 +49,15 @@ h3 { font-size: 1.02rem; }
 .logo { font-size: 1.5rem; letter-spacing: 1px; color: #fff; font-weight: 800; }
 .logo span { color: #4cd97c; }
 .topbar .sub { color: #b9c8de; font-size: 0.85rem; font-weight: 600; }
+.topbar-right {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; justify-content: flex-end;
+}
+/* 좁은 화면: 긴 부제목을 숨겨 음악/언어 버튼이 항상 보이게 */
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; gap: 8px; }
+  .topbar .sub { display: none; }
+}
 
 /* ── 히어로 ──────────────────────────────────── */
 .hero {
@@ -138,6 +147,7 @@ h3 { font-size: 1.02rem; }
 .team-card .ovr { margin-left: auto; font-weight: 900; font-size: 1.15rem; color: var(--green); }
 
 /* ── 테이블 ──────────────────────────────────── */
+.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); }
 td { font-weight: 600; }
@@ -323,6 +333,30 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 }
 .lang-toggle button.active { background: var(--green); color: #fff; }
 
+/* ── 배경음악 바 (페이지 최상단, 스크롤해도 고정) ── */
+.musicbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--navy-grad); color: #fff;
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
+  border-bottom: 3px solid var(--gold);
+  box-shadow: 0 4px 14px rgba(13, 34, 64, 0.22);
+  position: sticky; top: 6px; z-index: 30;
+}
+.musicbar-label { font-weight: 800; font-size: 0.9rem; margin-right: auto; letter-spacing: 0.5px; }
+.musicbar-btn {
+  background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.4); color: #fff;
+  border-radius: 999px; padding: 9px 16px; font-weight: 800; font-size: 0.85rem; cursor: pointer;
+  font-family: inherit; min-height: 42px; transition: filter 0.12s;
+}
+.musicbar-btn:hover { filter: brightness(1.12); }
+.musicbar-btn.primary { background: var(--green); border-color: var(--green-dark); }
+.musicbar-btn.primary.on { background: var(--red); border-color: var(--red); }
+.musicbar-btn.active { background: var(--gold); border-color: var(--gold); color: #2a2000; }
+@media (max-width: 560px) {
+  .musicbar-label { font-size: 0.82rem; width: 100%; margin-bottom: 2px; }
+  .musicbar-btn { flex: 1 1 auto; padding: 10px 8px; }
+}
+
 /* ── 언어 선택(첫) 화면 ───────────────────────── */
 .lang-select {
   min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
@@ -386,4 +420,44 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
   .scoreboard { font-size: 1.1rem; gap: 12px; }
   .scoreboard .score { font-size: 2rem; }
   .lang-card { width: 100%; }
+}
+
+/* ── 모바일(폰) 최적화 ───────────────────────── */
+@media (max-width: 560px) {
+  #root { padding: 12px 10px 48px; }
+  .panel { padding: 14px 12px; border-radius: 14px; }
+  .topbar { padding: 12px 14px; }
+  .logo { font-size: 1.3rem; }
+
+  /* 터치 타깃 키우기 */
+  .btn { padding: 13px 18px; font-size: 0.95rem; min-height: 46px; }
+  .btn.big { padding: 15px 24px; font-size: 1.05rem; width: 100%; }
+  .match-actions .btn { flex: 1 1 auto; }
+  .chip { padding: 9px 13px; font-size: 0.84rem; min-height: 40px; }
+  .p-chat-btn { min-width: 46px; font-size: 1.15rem; }
+
+  /* 가독성 */
+  .hero { padding: 48px 14px; }
+  .hero h1 { font-size: 2rem; }
+  .hero p { font-size: 1rem; }
+  h3 { font-size: 0.98rem; }
+  table { font-size: 0.88rem; }
+  th, td { padding: 7px 8px; }
+  .feed { height: 300px; }
+  .feed .ev { font-size: 0.9rem; }
+
+  /* 전광판 */
+  .scoreboard { gap: 8px; padding: 12px 8px; font-size: 1rem; }
+  .scoreboard .score { font-size: 1.8rem; }
+  .fixture { font-size: 1.05rem; gap: 10px; }
+
+  /* 작전 칩 행: 라벨을 위로, 칩은 가로 스크롤 가능 */
+  .tactic-title { min-width: 100%; margin-bottom: 2px; }
+
+  /* 선수 대화 모달이 화면 거의 전체 */
+  .modal { max-height: 92vh; padding: 14px; border-radius: 14px; }
+  .coach-msg { max-width: 92%; }
+
+  /* 팀 선택 카드 1열 */
+  .team-grid { grid-template-columns: 1fr; }
 }

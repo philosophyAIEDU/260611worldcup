@@ -20,6 +20,8 @@ import MatchView from './components/MatchView.jsx';
 import Bracket from './components/Bracket.jsx';
 import EndScreen from './components/EndScreen.jsx';
 import LearnCoach from './components/LearnCoach.jsx';
+import StatsView from './components/StatsView.jsx';
+import MusicPlayer from './components/MusicPlayer.jsx';
 import Flag from './components/Flag.jsx';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -34,6 +36,8 @@ const strip = (r) => ({
   extraTime: r.extraTime,
   upset: r.upset,
   shootout: r.shootout ? { homeScore: r.shootout.homeScore, awayScore: r.shootout.awayScore } : null,
+  scorers: r.scorers || [],
+  assisters: r.assisters || [],
 });
 
 const newGame = (myTeam) => ({
@@ -221,9 +225,10 @@ export default function App() {
 
   return (
     <div>
+      <MusicPlayer />
       <div className="topbar">
         <div className="logo">TACTIX <span>2026</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="topbar-right">
           <div className="sub">{t('app.sub')}</div>
           <div className="lang-toggle">
             <button className={lang === 'ko' ? 'active' : ''} onClick={() => setLang('ko')}>KO</button>
@@ -324,6 +329,7 @@ function Hub({
   showAllGroups, onToggleGroups, onPlayGroup, onPlayKo, onAutoSim, onRestart,
 }) {
   const { t, tn, lang } = useLang();
+  const [showStats, setShowStats] = React.useState(false);
   const me = TEAMS[game.myTeam];
   const stageEn = game.phase === 'group'
     ? `Group ${myGroup}, matchday ${Math.min(game.matchday, 3)}`
@@ -380,6 +386,13 @@ function Hub({
           </div>
         </>
       )}
+
+      <div className="panel">
+        <button className="btn ghost" onClick={() => setShowStats((v) => !v)}>
+          {t('hub.stats')}
+        </button>
+        {showStats && <div style={{ marginTop: 14 }}><StatsView game={game} /></div>}
+      </div>
 
       <LearnCoach situation={situation} />
 

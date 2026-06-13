@@ -190,6 +190,7 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     ag: 0,
     events: [],
     scorers: [],
+    assisters: [],
     shootout: null,
   };
 
@@ -225,7 +226,8 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
         const scorer = pickScorer(sd, type);
         const assister = type === 'penalty' || type === 'freekick' || type === 'solo' ? null : pickAssister(sd, scorer);
         if (sideKey === 'home') m.hg++; else m.ag++;
-        m.scorers.push({ minute, side: sideKey, name: scorer.name, team: sd.team.code });
+        m.scorers.push({ minute, side: sideKey, name: scorer.name, nameEn: scorer.nameEn, team: sd.team.code });
+        if (assister) m.assisters.push({ minute, side: sideKey, name: assister.name, nameEn: assister.nameEn, team: sd.team.code });
         push(out, minute, 'goal', sideKey,
           `${goalText(type, nm(scorer), assister ? nm(assister) : null, lang)} ⚽ ${tnm(homeTeam)} ${m.hg}-${m.ag} ${tnm(awayTeam)}`);
       } else if (r < 0.045) {
@@ -342,6 +344,7 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
       awayGoals: m.ag,
       events: m.events,
       scorers: m.scorers,
+      assisters: m.assisters,
       extraTime: m.extraTime,
       shootout: m.shootout,
       winner,

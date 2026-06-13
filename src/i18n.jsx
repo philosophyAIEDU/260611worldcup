@@ -24,6 +24,13 @@ function storeLang(l) {
 // 값은 문자열 또는 vars를 받는 함수. {var} 자리표시자는 자동 치환된다.
 const STRINGS = {
   'app.sub': { ko: '2026 FIFA 북중미 월드컵 시뮬레이터', en: '2026 FIFA World Cup Simulator' },
+  'music.play': { ko: '배경음악 재생', en: 'Play background music' },
+  'music.pause': { ko: '배경음악 정지', en: 'Pause background music' },
+  'music.track': { ko: ({ n }) => `배경음악 ${n}번`, en: ({ n }) => `Track ${n}` },
+  'music.bg': { ko: '배경음악', en: 'Background Music' },
+  'music.playShort': { ko: '재생', en: 'Play' },
+  'music.pauseShort': { ko: '정지', en: 'Pause' },
+  'music.trackShort': { ko: ({ n }) => `곡 ${n}`, en: ({ n }) => `Song ${n}` },
 
   // 언어 선택 화면
   'lang.title': { ko: '언어를 선택하세요', en: 'Choose your language' },
@@ -98,6 +105,14 @@ const STRINGS = {
     en: ({ me, summary }) => `${me}'s journey ends here — ${summary}. Watch the rest of the tournament?`,
   },
   'hub.autoSim': { ko: '남은 대회 자동 진행 ⏩', en: 'Auto-play remaining matches ⏩' },
+  'hub.stats': { ko: '📊 득점·어시스트 순위', en: '📊 Scorers & Assists' },
+  'stats.tab.goals': { ko: '⚽ 득점 순위', en: '⚽ Top Scorers' },
+  'stats.tab.assists': { ko: '🎯 어시스트 순위', en: '🎯 Top Assists' },
+  'stats.h.player': { ko: '선수', en: 'Player' },
+  'stats.h.team': { ko: '팀', en: 'Team' },
+  'stats.h.goals': { ko: '득점', en: 'Goals' },
+  'stats.h.assists': { ko: '어시스트', en: 'Assists' },
+  'stats.noData': { ko: '아직 데이터가 없습니다. 경기를 진행하면 여기에 표시됩니다.', en: 'No data yet — play some matches first.' },
 
   // 다음 경기
   'fixture.next': { ko: ({ label }) => `다음 경기 · ${label}`, en: ({ label }) => `Next Match · ${label}` },

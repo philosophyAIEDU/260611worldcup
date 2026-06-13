@@ -3,6 +3,7 @@ import { TEAMS } from '../data/teams/index.js';
 import { useLang, runSummaryText } from '../i18n.jsx';
 import { playCeremony } from '../engine/sfx.js';
 import Bracket from './Bracket.jsx';
+import StatsView from './StatsView.jsx';
 import Flag from './Flag.jsx';
 
 export default function EndScreen({ game, onRestart }) {
@@ -46,6 +47,10 @@ export default function EndScreen({ game, onRestart }) {
           <Bracket rounds={game.rounds} myTeam={game.myTeam} />
         </div>
       )}
+      <div className="panel">
+        <h3 style={{ marginBottom: 10 }}>{t('hub.stats')}</h3>
+        <StatsView game={game} />
+      </div>
     </div>
   );
 }
