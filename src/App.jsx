@@ -20,6 +20,7 @@ import MatchView from './components/MatchView.jsx';
 import Bracket from './components/Bracket.jsx';
 import EndScreen from './components/EndScreen.jsx';
 import LearnCoach from './components/LearnCoach.jsx';
+import StatsView from './components/StatsView.jsx';
 import MusicPlayer from './components/MusicPlayer.jsx';
 import Flag from './components/Flag.jsx';
 
@@ -35,6 +36,8 @@ const strip = (r) => ({
   extraTime: r.extraTime,
   upset: r.upset,
   shootout: r.shootout ? { homeScore: r.shootout.homeScore, awayScore: r.shootout.awayScore } : null,
+  scorers: r.scorers || [],
+  assisters: r.assisters || [],
 });
 
 const newGame = (myTeam) => ({
@@ -326,6 +329,7 @@ function Hub({
   showAllGroups, onToggleGroups, onPlayGroup, onPlayKo, onAutoSim, onRestart,
 }) {
   const { t, tn, lang } = useLang();
+  const [showStats, setShowStats] = React.useState(false);
   const me = TEAMS[game.myTeam];
   const stageEn = game.phase === 'group'
     ? `Group ${myGroup}, matchday ${Math.min(game.matchday, 3)}`
@@ -384,6 +388,13 @@ function Hub({
       )}
 
       <LearnCoach situation={situation} />
+
+      <div className="panel">
+        <button className="btn ghost" onClick={() => setShowStats((v) => !v)}>
+          {t('hub.stats')}
+        </button>
+        {showStats && <div style={{ marginTop: 14 }}><StatsView game={game} /></div>}
+      </div>
 
       <div className="panel">
         <button className="btn ghost" onClick={onToggleGroups}>

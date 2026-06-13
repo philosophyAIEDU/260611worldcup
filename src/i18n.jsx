@@ -101,6 +101,14 @@ const STRINGS = {
     en: ({ me, summary }) => `${me}'s journey ends here — ${summary}. Watch the rest of the tournament?`,
   },
   'hub.autoSim': { ko: '남은 대회 자동 진행 ⏩', en: 'Auto-play remaining matches ⏩' },
+  'hub.stats': { ko: '📊 득점·어시스트 순위', en: '📊 Scorers & Assists' },
+  'stats.tab.goals': { ko: '⚽ 득점 순위', en: '⚽ Top Scorers' },
+  'stats.tab.assists': { ko: '🎯 어시스트 순위', en: '🎯 Top Assists' },
+  'stats.h.player': { ko: '선수', en: 'Player' },
+  'stats.h.team': { ko: '팀', en: 'Team' },
+  'stats.h.goals': { ko: '득점', en: 'Goals' },
+  'stats.h.assists': { ko: '어시스트', en: 'Assists' },
+  'stats.noData': { ko: '아직 데이터가 없습니다. 경기를 진행하면 여기에 표시됩니다.', en: 'No data yet — play some matches first.' },
 
   // 다음 경기
   'fixture.next': { ko: ({ label }) => `다음 경기 · ${label}`, en: ({ label }) => `Next Match · ${label}` },
