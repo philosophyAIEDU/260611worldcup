@@ -5,7 +5,7 @@ import song2 from '../assets/audio/song2.mp3';
 
 const TRACKS = [song1, song2];
 
-// 상단바 배경음악 플레이어 — 사용자가 재생/정지, 곡(1/2)을 직접 선택한다.
+// 페이지 최상단의 눈에 띄는 배경음악 바.
 // 브라우저 자동재생 정책상 첫 재생은 사용자가 ▶ 를 눌러야 시작된다.
 export default function MusicPlayer() {
   const { t } = useLang();
@@ -18,7 +18,7 @@ export default function MusicPlayer() {
     const a = audioRef.current;
     if (!a) return;
     a.src = TRACKS[track];
-    a.volume = 0.4;
+    a.volume = 0.45;
     if (playing) a.play().catch(() => {});
   }, [track]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -38,33 +38,34 @@ export default function MusicPlayer() {
       toggle();
       return;
     }
-    setTrack(i); // 효과가 소스 교체 후 (재생 중이면) 자동 재생
-    if (!playing) setPlaying(true);
+    setTrack(i); // 효과가 소스 교체 후 자동 재생
+    setPlaying(true);
   };
 
   return (
-    <div className="music-toggle">
+    <div className="musicbar">
       <audio ref={audioRef} loop />
+      <span className="musicbar-label">🎵 {t('music.bg')}</span>
       <button
-        className={`play ${playing ? 'on' : ''}`}
+        className={`musicbar-btn primary ${playing ? 'on' : ''}`}
         onClick={toggle}
         title={t(playing ? 'music.pause' : 'music.play')}
       >
-        {playing ? '⏸' : '▶'} 🎵
+        {playing ? `⏸ ${t('music.pauseShort')}` : `▶ ${t('music.playShort')}`}
       </button>
       <button
-        className={`trk ${track === 0 ? 'active' : ''}`}
+        className={`musicbar-btn ${playing && track === 0 ? 'active' : ''}`}
         onClick={() => choose(0)}
         title={t('music.track', { n: 1 })}
       >
-        1
+        {t('music.trackShort', { n: 1 })}
       </button>
       <button
-        className={`trk ${track === 1 ? 'active' : ''}`}
+        className={`musicbar-btn ${playing && track === 1 ? 'active' : ''}`}
         onClick={() => choose(1)}
         title={t('music.track', { n: 2 })}
       >
-        2
+        {t('music.trackShort', { n: 2 })}
       </button>
     </div>
   );

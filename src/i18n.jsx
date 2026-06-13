@@ -27,6 +27,10 @@ const STRINGS = {
   'music.play': { ko: '배경음악 재생', en: 'Play background music' },
   'music.pause': { ko: '배경음악 정지', en: 'Pause background music' },
   'music.track': { ko: ({ n }) => `배경음악 ${n}번`, en: ({ n }) => `Track ${n}` },
+  'music.bg': { ko: '배경음악', en: 'Background Music' },
+  'music.playShort': { ko: '재생', en: 'Play' },
+  'music.pauseShort': { ko: '정지', en: 'Pause' },
+  'music.trackShort': { ko: ({ n }) => `곡 ${n}`, en: ({ n }) => `Song ${n}` },
 
   // 언어 선택 화면
   'lang.title': { ko: '언어를 선택하세요', en: 'Choose your language' },

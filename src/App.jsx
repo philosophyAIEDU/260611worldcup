@@ -225,11 +225,11 @@ export default function App() {
 
   return (
     <div>
+      <MusicPlayer />
       <div className="topbar">
         <div className="logo">TACTIX <span>2026</span></div>
         <div className="topbar-right">
           <div className="sub">{t('app.sub')}</div>
-          <MusicPlayer />
           <div className="lang-toggle">
             <button className={lang === 'ko' ? 'active' : ''} onClick={() => setLang('ko')}>KO</button>
             <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>

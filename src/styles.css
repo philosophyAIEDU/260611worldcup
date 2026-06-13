@@ -333,17 +333,29 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 }
 .lang-toggle button.active { background: var(--green); color: #fff; }
 
-.music-toggle {
-  display: inline-flex; align-items: center; border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 999px; overflow: hidden;
+/* ── 배경음악 바 (페이지 최상단, 스크롤해도 고정) ── */
+.musicbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--navy-grad); color: #fff;
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
+  border-bottom: 3px solid var(--gold);
+  box-shadow: 0 4px 14px rgba(13, 34, 64, 0.22);
+  position: sticky; top: 6px; z-index: 30;
 }
-.music-toggle button {
-  background: transparent; border: none; color: #b9c8de; cursor: pointer;
-  font-weight: 800; font-size: 0.78rem; padding: 5px 10px; font-family: inherit;
+.musicbar-label { font-weight: 800; font-size: 0.9rem; margin-right: auto; letter-spacing: 0.5px; }
+.musicbar-btn {
+  background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.4); color: #fff;
+  border-radius: 999px; padding: 9px 16px; font-weight: 800; font-size: 0.85rem; cursor: pointer;
+  font-family: inherit; min-height: 42px; transition: filter 0.12s;
 }
-.music-toggle button.play { color: #fff; }
-.music-toggle button.play.on { background: var(--green); }
-.music-toggle button.trk.active { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.musicbar-btn:hover { filter: brightness(1.12); }
+.musicbar-btn.primary { background: var(--green); border-color: var(--green-dark); }
+.musicbar-btn.primary.on { background: var(--red); border-color: var(--red); }
+.musicbar-btn.active { background: var(--gold); border-color: var(--gold); color: #2a2000; }
+@media (max-width: 560px) {
+  .musicbar-label { font-size: 0.82rem; width: 100%; margin-bottom: 2px; }
+  .musicbar-btn { flex: 1 1 auto; padding: 10px 8px; }
+}
 
 /* ── 언어 선택(첫) 화면 ───────────────────────── */
 .lang-select {
