@@ -27,13 +27,13 @@ const STRINGS = {
   // 언어 선택 화면
   'lang.title': { ko: '언어를 선택하세요', en: 'Choose your language' },
   'lang.subtitle': {
-    ko: 'Select a language to begin. 영어를 선택하면 모든 내용이 영어로 표시되어 영어 학습에 도움이 됩니다.',
-    en: 'English mode shows everything in English — a fun way to learn football English. 한국어로도 즐길 수 있습니다.',
+    ko: '같은 게임, 언어만 다릅니다. 선택은 저장되며 상단바에서 언제든 바꿀 수 있어요.',
+    en: 'Same game in both — only the language differs. You can switch any time from the top bar.',
   },
   'lang.ko': { ko: '한국어', en: '한국어 (Korean)' },
   'lang.en': { ko: 'English (영어)', en: 'English' },
-  'lang.koDesc': { ko: '모든 내용을 한국어로', en: 'Play entirely in Korean' },
-  'lang.enDesc': { ko: '모든 내용을 영어로 — 영어 학습 모드', en: 'Play in English — learning mode with an AI English coach' },
+  'lang.koDesc': { ko: '한국어로 플레이', en: 'Play in Korean' },
+  'lang.enDesc': { ko: '영어로 플레이', en: 'Play in English' },
   'lang.switch': { ko: '언어', en: 'Language' },
 
   // 홈

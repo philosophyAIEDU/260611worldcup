@@ -299,19 +299,19 @@ function LanguageSelect({ onPick }) {
         <div className="logo big">TACTIX <span>2026</span></div>
         <h1>{`언어를 선택하세요 / Choose your language`}</h1>
         <p>
-          English mode shows everything in English with an AI English coach to help you learn
-          football English. 한국어로도 즐길 수 있습니다.
+          같은 게임, 언어만 다릅니다. 선택은 저장되며 상단바에서 언제든 바꿀 수 있어요.<br />
+          Same game in both — only the language differs. You can switch any time from the top bar.
         </p>
         <div className="lang-cards">
           <button className="lang-card" onClick={() => onPick('ko')}>
             <span className="lang-flag">🇰🇷</span>
             <span className="lang-name">한국어</span>
-            <span className="lang-desc">모든 내용을 한국어로</span>
+            <span className="lang-desc">한국어로 플레이</span>
           </button>
           <button className="lang-card en" onClick={() => onPick('en')}>
             <span className="lang-flag">🇬🇧</span>
             <span className="lang-name">English</span>
-            <span className="lang-desc">Learning mode + AI English coach</span>
+            <span className="lang-desc">Play in English</span>
           </button>
         </div>
       </div>
