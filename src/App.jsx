@@ -227,7 +227,7 @@ export default function App() {
     <div>
       <div className="topbar">
         <div className="logo">TACTIX <span>2026</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="topbar-right">
           <div className="sub">{t('app.sub')}</div>
           <MusicPlayer />
           <div className="lang-toggle">

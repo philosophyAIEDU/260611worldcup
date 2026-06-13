@@ -8,21 +8,40 @@ let ctx = null;
 let master = null;
 let enabled = loadEnabled();
 
-// 골 음원 — HTMLAudioElement로 재생(합성음보다 강력).
-let goalAudio = null;
-function playGoalFile() {
+// 골 음원 — Web Audio로 디코딩해 재생한다.
+// (HTMLAudio.play()는 iOS/사파리에서 타이머 호출 시 차단되므로, 이미 해제된
+//  AudioContext를 통해 버퍼로 재생하면 휘슬처럼 안정적으로 소리가 난다.)
+let goalBuffer = null;
+let goalLoading = false;
+let goalGain = null; // 골 전용 게인(마스터보다 크게 — 강력하게)
+
+async function loadGoalBuffer() {
+  if (goalBuffer || goalLoading) return;
+  if (!ac()) return;
+  goalLoading = true;
   try {
-    if (!goalAudio) {
-      goalAudio = new Audio(goalUrl);
-      goalAudio.volume = 1.0;
-    }
-    goalAudio.currentTime = 0;
-    const pr = goalAudio.play();
-    if (pr && pr.catch) pr.catch(() => {});
-    return true;
+    const res = await fetch(goalUrl);
+    const arr = await res.arrayBuffer();
+    goalBuffer = await ctx.decodeAudioData(arr);
   } catch {
-    return false;
+    goalBuffer = null;
+  } finally {
+    goalLoading = false;
   }
+}
+
+function playGoalBuffer() {
+  if (!goalBuffer || !ctx) return false;
+  if (!goalGain) {
+    goalGain = ctx.createGain();
+    goalGain.gain.value = 1.6;
+    goalGain.connect(ctx.destination); // 마스터(0.35) 우회 — 크게
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = goalBuffer;
+  src.connect(goalGain);
+  src.start();
+  return true;
 }
 
 function loadEnabled() {
@@ -217,14 +236,13 @@ function thump(start) {
 }
 
 // 골! — 실제 음원(goal.m4a) 재생 + 관중 앰비언스 부풀림.
-// 음원 재생이 불가하면 합성음으로 대체한다.
+// 음원이 아직 로딩 전이거나 불가하면 합성음으로 대체한다.
 export function playGoal() {
-  if (!enabled) return;
-  const fileOk = playGoalFile();
-  if (!ac()) return;
+  if (!enabled || !ac()) return;
   swellAmbience();
-  if (fileOk) return; // 음원이 재생되면 합성음은 생략
-  // 폴백: 합성 골 사운드
+  if (playGoalBuffer()) return; // 음원이 준비되면 그것만 재생
+  loadGoalBuffer(); // 다음 골을 위해 비동기 로드 시작
+  // 폴백: 합성 골 사운드(이번 골)
   const t = ctx.currentTime;
   crowd(t, 2.0, 0.55, 900);
   crowd(t + 0.05, 1.4, 0.3, 1700);
@@ -266,6 +284,7 @@ let ambienceGain = null;
 
 export function startAmbience() {
   if (!enabled || !ac()) return;
+  loadGoalBuffer(); // 골 음원 미리 디코딩(첫 골부터 바로 재생)
   if (ambienceNode) return;
   const c = ctx;
   const src = c.createBufferSource();

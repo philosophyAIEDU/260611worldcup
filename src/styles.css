@@ -49,6 +49,15 @@ h3 { font-size: 1.02rem; }
 .logo { font-size: 1.5rem; letter-spacing: 1px; color: #fff; font-weight: 800; }
 .logo span { color: #4cd97c; }
 .topbar .sub { color: #b9c8de; font-size: 0.85rem; font-weight: 600; }
+.topbar-right {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; justify-content: flex-end;
+}
+/* 좁은 화면: 긴 부제목을 숨겨 음악/언어 버튼이 항상 보이게 */
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; gap: 8px; }
+  .topbar .sub { display: none; }
+}
 
 /* ── 히어로 ──────────────────────────────────── */
 .hero {
