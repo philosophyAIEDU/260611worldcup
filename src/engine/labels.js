@@ -27,6 +27,7 @@ const PLAYSTYLE_LABELS = {
   longball: { ko: '롱볼/롱스로인', en: 'Long Ball' },
   wing: { ko: '측면 돌파', en: 'Wing Play' },
   catenaccio: { ko: '빗장수비', en: 'Catenaccio' },
+  allout: { ko: '막판 파상공세', en: 'All-Out Attack (late)' },
 };
 
 export function formationLabel(key, lang = 'ko') {

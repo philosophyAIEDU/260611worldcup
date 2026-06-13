@@ -52,6 +52,8 @@ export const PLAYSTYLES = {
   longball: { atk: 1.04, def: 1.0, bias: { header: 2.2, corner: 1.8, rebound: 1.6, longshot: 1.2 } }, // 롱볼/롱스로인
   wing: { atk: 1.06, def: 1.0, bias: { header: 1.8, corner: 1.5, combo: 1.3 } }, // 측면 돌파/크로스
   catenaccio: { atk: 0.86, def: 0.82, bias: { counter: 2.0, longshot: 1.2 } }, // 빗장수비
+  // 파상공세: 기본도 공격적, Q4(69분~) 이후 추가 보정(goalProb에서 처리)
+  allout: { atk: 1.25, def: 1.32, bias: { combo: 1.6, header: 1.5, corner: 1.4, longshot: 1.2, counter: 0.4 } }, // 파상공세
 };
 
 // 국가대표별 기본 색깔(감독이 바꿀 수 있음). 없으면 balanced.
@@ -197,20 +199,28 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     out.push(ev);
   };
 
-  const goalProb = (atkSide, defSide) => {
+  const goalProb = (atkSide, defSide, minute = 0) => {
     const total = home.strength + away.strength;
     const edge = (atkSide.strength - defSide.strength) / total;
-    const p =
+    let p =
       (2.6 / 90) * (0.5 + edge * 2.6) *
       FORMATIONS[atkSide.formation].atk * MENTALITIES[atkSide.mentality].atk * PLAYSTYLES[atkSide.playstyle].atk *
       FORMATIONS[defSide.formation].def * MENTALITIES[defSide.mentality].def * PLAYSTYLES[defSide.playstyle].def;
+    // 파상공세: Q4(69분~) 막판 총공세. 늦을수록 강해짐(최대 +60%).
+    if (atkSide.playstyle === 'allout' && minute >= 69) {
+      p *= 1 + Math.min(0.6, ((minute - 68) / 22) * 0.6);
+    }
+    // 상대가 파상공세로 올라오면 뒷공간이 비어 우리 득점 기회도 늘어남.
+    if (defSide.playstyle === 'allout' && minute >= 69) {
+      p *= 1.18;
+    }
     return Math.max(0.004, p);
   };
 
   const simMinute = (minute, out) => {
     for (const [sideKey, sd, opp] of [['home', home, away], ['away', away, home]]) {
       const r = rand();
-      if (r < goalProb(sd, opp)) {
+      if (r < goalProb(sd, opp, minute)) {
         const type = pickGoalType(sd);
         const scorer = pickScorer(sd, type);
         const assister = type === 'penalty' || type === 'freekick' || type === 'solo' ? null : pickAssister(sd, scorer);
