@@ -387,14 +387,14 @@ function Hub({
         </>
       )}
 
-      <LearnCoach situation={situation} />
-
       <div className="panel">
         <button className="btn ghost" onClick={() => setShowStats((v) => !v)}>
           {t('hub.stats')}
         </button>
         {showStats && <div style={{ marginTop: 14 }}><StatsView game={game} /></div>}
       </div>
+
+      <LearnCoach situation={situation} />
 
       <div className="panel">
         <button className="btn ghost" onClick={onToggleGroups}>

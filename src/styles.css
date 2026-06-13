@@ -147,6 +147,7 @@ h3 { font-size: 1.02rem; }
 .team-card .ovr { margin-left: auto; font-weight: 900; font-size: 1.15rem; color: var(--green); }
 
 /* ── 테이블 ──────────────────────────────────── */
+.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); }
 td { font-weight: 600; }
@@ -407,4 +408,44 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
   .scoreboard { font-size: 1.1rem; gap: 12px; }
   .scoreboard .score { font-size: 2rem; }
   .lang-card { width: 100%; }
+}
+
+/* ── 모바일(폰) 최적화 ───────────────────────── */
+@media (max-width: 560px) {
+  #root { padding: 12px 10px 48px; }
+  .panel { padding: 14px 12px; border-radius: 14px; }
+  .topbar { padding: 12px 14px; }
+  .logo { font-size: 1.3rem; }
+
+  /* 터치 타깃 키우기 */
+  .btn { padding: 13px 18px; font-size: 0.95rem; min-height: 46px; }
+  .btn.big { padding: 15px 24px; font-size: 1.05rem; width: 100%; }
+  .match-actions .btn { flex: 1 1 auto; }
+  .chip { padding: 9px 13px; font-size: 0.84rem; min-height: 40px; }
+  .p-chat-btn { min-width: 46px; font-size: 1.15rem; }
+
+  /* 가독성 */
+  .hero { padding: 48px 14px; }
+  .hero h1 { font-size: 2rem; }
+  .hero p { font-size: 1rem; }
+  h3 { font-size: 0.98rem; }
+  table { font-size: 0.88rem; }
+  th, td { padding: 7px 8px; }
+  .feed { height: 300px; }
+  .feed .ev { font-size: 0.9rem; }
+
+  /* 전광판 */
+  .scoreboard { gap: 8px; padding: 12px 8px; font-size: 1rem; }
+  .scoreboard .score { font-size: 1.8rem; }
+  .fixture { font-size: 1.05rem; gap: 10px; }
+
+  /* 작전 칩 행: 라벨을 위로, 칩은 가로 스크롤 가능 */
+  .tactic-title { min-width: 100%; margin-bottom: 2px; }
+
+  /* 선수 대화 모달이 화면 거의 전체 */
+  .modal { max-height: 92vh; padding: 14px; border-radius: 14px; }
+  .coach-msg { max-width: 92%; }
+
+  /* 팀 선택 카드 1열 */
+  .team-grid { grid-template-columns: 1fr; }
 }
