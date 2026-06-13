@@ -11,6 +11,7 @@ import {
 } from './engine/tournament.js';
 import { createMatch, simulateMatch, rollConditions } from './engine/matchEngine.js';
 import { saveGame, loadGame, clearGame } from './engine/storage.js';
+import { useLang, runSummaryText } from './i18n.jsx';
 import TeamSelect from './components/TeamSelect.jsx';
 import SquadView from './components/SquadView.jsx';
 import Standings from './components/Standings.jsx';
@@ -18,6 +19,7 @@ import LineupScreen from './components/LineupScreen.jsx';
 import MatchView from './components/MatchView.jsx';
 import Bracket from './components/Bracket.jsx';
 import EndScreen from './components/EndScreen.jsx';
+import LearnCoach from './components/LearnCoach.jsx';
 import Flag from './components/Flag.jsx';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -42,12 +44,13 @@ const newGame = (myTeam) => ({
   rounds: [],
   champion: null,
   eliminated: false,
-  runSummary: '',
+  runResult: null,
 });
 
 const myGroupOf = (code) => GROUP_KEYS.find((g) => GROUPS[g].includes(code));
 
 export default function App() {
+  const { t, tn, lang, setLang, chosen } = useLang();
   const [screen, setScreen] = useState('home');
   const [game, setGame] = useState(null);
   const [previewTeam, setPreviewTeam] = useState(null);
@@ -84,7 +87,7 @@ export default function App() {
   };
 
   const kickoff = (setup) => {
-    const opts = { knockout: pending.knockout };
+    const opts = { knockout: pending.knockout, lang };
     opts[`${pending.mySide}Setup`] = {
       ...setup,
       conditions: pending.myConditions,
@@ -103,7 +106,7 @@ export default function App() {
   };
 
   const playGroupMatch = () =>
-    prepMatch(myGroupFixture(), `조별리그 ${myGroup}조 ${game.matchday}차전`, false);
+    prepMatch(myGroupFixture(), t('label.group', { g: myGroup, n: game.matchday }), false);
 
   const finishGroupMatch = (res) => {
     const g = clone(game);
@@ -122,12 +125,12 @@ export default function App() {
       const { bestThirds } = qualifiedTeams(st);
       const rows = st[myGroup];
       const pos = rows.findIndex((r) => r.code === g.myTeam);
-      const qualified = pos < 2 || (pos === 2 && bestThirds.some((t) => t.code === g.myTeam));
+      const qualified = pos < 2 || (pos === 2 && bestThirds.some((t2) => t2.code === g.myTeam));
       g.phase = 'ko';
       g.rounds = [{ name: ROUND_NAMES[0], matches: buildRoundOf32(st) }];
       if (!qualified) {
         g.eliminated = true;
-        g.runSummary = `조별리그 ${myGroup}조 ${pos + 1}위 탈락`;
+        g.runResult = { type: 'group', g: myGroup, pos: pos + 1 };
       }
     }
     setGame(g);
@@ -145,7 +148,8 @@ export default function App() {
         )
       : null;
 
-  const playKoMatch = () => prepMatch(myKoMatch, `토너먼트 ${currentRound.name}`, true);
+  const playKoMatch = () =>
+    prepMatch(myKoMatch, t('label.ko', { round: t(`round.${currentRound.name}`) }), true);
 
   const advanceRoundState = (g) => {
     const round = g.rounds[g.rounds.length - 1];
@@ -155,7 +159,7 @@ export default function App() {
     if (round.matches.length === 1) {
       g.champion = round.matches[0].result.winner;
       g.phase = 'done';
-      if (g.champion === g.myTeam) g.runSummary = '우승';
+      if (g.champion === g.myTeam) g.runResult = { type: 'champion' };
     } else {
       g.rounds.push({
         name: ROUND_NAMES[g.rounds.length],
@@ -171,7 +175,7 @@ export default function App() {
     m.result = strip(res);
     if (res.winner !== g.myTeam) {
       g.eliminated = true;
-      g.runSummary = `${round.name} 탈락`;
+      g.runResult = { type: 'ko', round: round.name };
     }
     advanceRoundState(g);
     setGame(g);
@@ -210,20 +214,31 @@ export default function App() {
   };
 
   // ── 렌더 ─────────────────────────────────────────────────────
+  // 첫 화면: 언어 선택 (아직 선택하지 않았을 때)
+  if (!chosen) {
+    return <LanguageSelect onPick={setLang} />;
+  }
+
   return (
     <div>
       <div className="topbar">
         <div className="logo">TACTIX <span>2026</span></div>
-        <div className="sub">2026 FIFA 북중미 월드컵 시뮬레이터</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="sub">{t('app.sub')}</div>
+          <div className="lang-toggle">
+            <button className={lang === 'ko' ? 'active' : ''} onClick={() => setLang('ko')}>KO</button>
+            <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
+          </div>
+        </div>
       </div>
 
       {screen === 'home' && (
         <div className="hero">
           <h1>TACTIX <span>2026</span></h1>
-          <p>48개국, 104경기, 단 하나의 트로피.<br />선발·전술·교체까지, 당신이 감독입니다.</p>
+          <p style={{ whiteSpace: 'pre-line' }}>{t('home.tagline')}</p>
           <div className="actions">
-            <button className="btn big" onClick={startNew}>새 게임 시작</button>
-            {hasSave && <button className="btn big ghost" onClick={resume}>이어하기</button>}
+            <button className="btn big" onClick={startNew}>{t('home.new')}</button>
+            {hasSave && <button className="btn big ghost" onClick={resume}>{t('home.resume')}</button>}
           </div>
         </div>
       )}
@@ -276,31 +291,66 @@ export default function App() {
   );
 }
 
+// ── 언어 선택(첫) 화면 ─────────────────────────────────────────────
+function LanguageSelect({ onPick }) {
+  return (
+    <div className="lang-select">
+      <div className="lang-hero">
+        <div className="logo big">TACTIX <span>2026</span></div>
+        <h1>{`언어를 선택하세요 / Choose your language`}</h1>
+        <p>
+          같은 게임, 언어만 다릅니다. 선택은 저장되며 상단바에서 언제든 바꿀 수 있어요.<br />
+          Same game in both — only the language differs. You can switch any time from the top bar.
+        </p>
+        <div className="lang-cards">
+          <button className="lang-card" onClick={() => onPick('ko')}>
+            <span className="lang-flag">🇰🇷</span>
+            <span className="lang-name">한국어</span>
+            <span className="lang-desc">한국어로 플레이</span>
+          </button>
+          <button className="lang-card en" onClick={() => onPick('en')}>
+            <span className="lang-flag">🇬🇧</span>
+            <span className="lang-name">English</span>
+            <span className="lang-desc">Play in English</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Hub({
   game, myGroup, standings, fixture, myKoMatch,
   showAllGroups, onToggleGroups, onPlayGroup, onPlayKo, onAutoSim, onRestart,
 }) {
+  const { t, tn, lang } = useLang();
   const me = TEAMS[game.myTeam];
+  const stageEn = game.phase === 'group'
+    ? `Group ${myGroup}, matchday ${Math.min(game.matchday, 3)}`
+    : `knockout stage (${currentRoundName(game)})`;
+  const situation = `Managing ${me.nameEn}. Stage: ${stageEn}.`;
 
   return (
     <div>
       <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <Flag code={me.code} size={22} />{' '}
-          <strong style={{ fontSize: '1.15rem' }}>{me.name}</strong>
+          <strong style={{ fontSize: '1.15rem' }}>{tn(me)}</strong>
           <span className="badge">
-            {game.phase === 'group' ? `조별리그 ${myGroup}조 · ${Math.min(game.matchday, 3)}차전` : '토너먼트'}
+            {game.phase === 'group'
+              ? t('hub.groupBadge', { g: myGroup, n: Math.min(game.matchday, 3) })
+              : t('common.tournament')}
           </span>
-          {game.eliminated && <span className="badge danger-text">탈락</span>}
+          {game.eliminated && <span className="badge danger-text">{t('common.eliminated')}</span>}
         </div>
-        <button className="btn danger" onClick={onRestart}>처음으로</button>
+        <button className="btn danger" onClick={onRestart}>{t('common.toHome')}</button>
       </div>
 
       {game.phase === 'group' && (
         <>
-          {fixture && <NextFixture fixture={fixture} onPlay={onPlayGroup} label={`${game.matchday}차전`} />}
+          {fixture && <NextFixture fixture={fixture} onPlay={onPlayGroup} label={t('results.line', { n: game.matchday })} />}
           <div className="panel">
-            <h3 style={{ marginBottom: 10 }}>{myGroup}조 순위</h3>
+            <h3 style={{ marginBottom: 10 }}>{t('hub.groupStandings', { g: myGroup })}</h3>
             <Standings rows={standings[myGroup]} myTeam={game.myTeam} highlightQualified />
             <GroupResults results={game.groupResults[myGroup]} />
           </div>
@@ -313,33 +363,35 @@ function Hub({
             <NextFixture
               fixture={myKoMatch}
               onPlay={onPlayKo}
-              label={game.rounds[game.rounds.length - 1].name}
+              label={t(`round.${game.rounds[game.rounds.length - 1].name}`)}
             />
           )}
           {game.eliminated && (
             <div className="panel" style={{ textAlign: 'center' }}>
               <p style={{ color: 'var(--dim)', marginBottom: 12 }}>
-                {me.name}의 여정은 여기까지입니다 — {game.runSummary}. 남은 대회를 지켜보시겠습니까?
+                {t('hub.eliminatedMsg', { me: tn(me), summary: runSummaryText(t, game.runResult) })}
               </p>
-              <button className="btn" onClick={onAutoSim}>남은 대회 자동 진행 ⏩</button>
+              <button className="btn" onClick={onAutoSim}>{t('hub.autoSim')}</button>
             </div>
           )}
           <div className="panel">
-            <h3 style={{ marginBottom: 10 }}>토너먼트 대진표</h3>
+            <h3 style={{ marginBottom: 10 }}>{t('hub.bracket')}</h3>
             <Bracket rounds={game.rounds} myTeam={game.myTeam} />
           </div>
         </>
       )}
 
+      <LearnCoach situation={situation} />
+
       <div className="panel">
         <button className="btn ghost" onClick={onToggleGroups}>
-          {showAllGroups ? '전체 조 순위 접기' : '전체 조 순위 보기'}
+          {showAllGroups ? t('hub.hideAll') : t('hub.showAll')}
         </button>
         {showAllGroups && (
           <div className="grid2" style={{ marginTop: 14 }}>
             {GROUP_KEYS.map((g) => (
               <div key={g}>
-                <h3 style={{ margin: '6px 0' }}>{g}조</h3>
+                <h3 style={{ margin: '6px 0' }}>{t('hub.groupShort', { g })}</h3>
                 <Standings rows={standings[g]} myTeam={game.myTeam} highlightQualified={game.matchday > 3} />
               </div>
             ))}
@@ -350,35 +402,42 @@ function Hub({
   );
 }
 
+function currentRoundName(game) {
+  const r = game.rounds[game.rounds.length - 1];
+  return r ? r.name : '';
+}
+
 function NextFixture({ fixture, onPlay, label }) {
+  const { t, tn } = useLang();
   const h = TEAMS[fixture.home];
   const a = TEAMS[fixture.away];
   return (
     <div className="panel next-fixture">
-      <div className="matchup-label">다음 경기 · {label}</div>
+      <div className="matchup-label">{t('fixture.next', { label })}</div>
       <div className="fixture">
-        <span className="side"><Flag code={h.code} size={28} /> {h.name}</span>
-        <span className="vs">VS</span>
-        <span className="side">{a.name} <Flag code={a.code} size={28} /></span>
+        <span className="side"><Flag code={h.code} size={28} /> {tn(h)}</span>
+        <span className="vs">{t('common.vs')}</span>
+        <span className="side">{tn(a)} <Flag code={a.code} size={28} /></span>
       </div>
       <div className="fixture-meta">
-        FIFA 랭킹 {h.ranking}위 (전력 {h.rating}) vs {a.ranking}위 (전력 {a.rating})
+        {t('fixture.meta', { hr: h.ranking, hrt: h.rating, ar: a.ranking, art: a.rating })}
       </div>
       <div className="match-actions">
-        <button className="btn big" onClick={onPlay}>📋 경기 준비 (선발·전술)</button>
+        <button className="btn big" onClick={onPlay}>{t('fixture.prep')}</button>
       </div>
     </div>
   );
 }
 
 function GroupResults({ results }) {
+  const { t, tn } = useLang();
   if (!results.length) return null;
   return (
     <ul className="results-list" style={{ marginTop: 12 }}>
       {results.map((r, i) => (
         <li key={i}>
-          {r.matchday}차전 — <Flag code={r.home} size={14} /> {TEAMS[r.home].name} {r.homeGoals} : {r.awayGoals} {TEAMS[r.away].name} <Flag code={r.away} size={14} />
-          {r.upset && <span className="upset-tag"> 🚨 이변!</span>}
+          {t('results.line', { n: r.matchday })} — <Flag code={r.home} size={14} /> {tn(TEAMS[r.home])} {r.homeGoals} : {r.awayGoals} {tn(TEAMS[r.away])} <Flag code={r.away} size={14} />
+          {r.upset && <span className="upset-tag"> {t('results.upset')}</span>}
         </li>
       ))}
     </ul>

@@ -72,7 +72,8 @@ export function buildRoundOf32(standings) {
   return high.map((h, i) => ({ home: h.code, away: low[i].code, result: null }));
 }
 
-export const ROUND_NAMES = ['32강', '16강', '8강', '준결승', '결승'];
+// 라운드 식별 키 (표시 문자열은 i18n에서 round.* 로 번역)
+export const ROUND_NAMES = ['R32', 'R16', 'QF', 'SF', 'F'];
 
 // 직전 라운드 승자들로 다음 라운드 대진 생성
 export function nextRound(matches) {

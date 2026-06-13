@@ -1,27 +1,30 @@
 import React from 'react';
 import { TEAMS } from '../data/teams/index.js';
+import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 
 export default function Standings({ rows, myTeam, highlightQualified }) {
+  const { t, tn } = useLang();
   return (
     <table>
       <thead>
         <tr>
-          <th>#</th><th>팀</th><th className="num">경기</th><th className="num">승</th>
-          <th className="num">무</th><th className="num">패</th><th className="num">득실</th>
-          <th className="num">승점</th>
+          <th>#</th><th>{t('standings.team')}</th><th className="num">{t('standings.played')}</th>
+          <th className="num">{t('standings.won')}</th><th className="num">{t('standings.drawn')}</th>
+          <th className="num">{t('standings.lost')}</th><th className="num">{t('standings.gd')}</th>
+          <th className="num">{t('standings.pts')}</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((r, i) => {
-          const t = TEAMS[r.code];
+          const team = TEAMS[r.code];
           return (
             <tr
               key={r.code}
               className={`${r.code === myTeam ? 'me' : ''} ${highlightQualified && i < 2 ? 'qualified' : ''}`}
             >
               <td>{i + 1}</td>
-              <td><Flag code={t.code} size={15} /> {t.name}</td>
+              <td><Flag code={team.code} size={15} /> {tn(team)}</td>
               <td className="num">{r.played}</td>
               <td className="num">{r.won}</td>
               <td className="num">{r.drawn}</td>
