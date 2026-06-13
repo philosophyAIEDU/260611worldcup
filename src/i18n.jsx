@@ -156,6 +156,8 @@ const STRINGS = {
   'match.normal': { ko: '▶ 보통 속도', en: '▶ Normal' },
   'match.instructions': { ko: ({ n }) => `🧠 작전 지시 (${n}회 교체 가능)`, en: ({ n }) => `🧠 Instructions (${n} subs left)` },
   'match.skip': { ko: '결과 바로 보기', en: 'Skip to result' },
+  'match.sfxOn': { ko: '🔊 효과음', en: '🔊 Sound' },
+  'match.sfxOff': { ko: '🔇 효과음', en: '🔇 Muted' },
   'match.continue': { ko: '계속 →', en: 'Continue →' },
   'match.opsTitle': { ko: ({ n }) => `🧠 작전 지시 — ${n}분`, en: ({ n }) => `🧠 Touchline Instructions — ${n}'` },
   'match.close': { ko: '닫기 ✕ (경기 재개)', en: 'Close ✕ (resume)' },

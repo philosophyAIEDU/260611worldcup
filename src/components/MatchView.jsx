@@ -6,6 +6,7 @@ import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
 import PlayerChat from './PlayerChat.jsx';
+import { isSfxOn, setSfxOn, playEventSound, playFinalWhistle } from '../engine/sfx.js';
 
 function condClass(c) {
   if (c >= 0.9) return 'cond-hot';
@@ -30,10 +31,25 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const [benchOpen, setBenchOpen] = useState(false);
   const [pickedOut, setPickedOut] = useState(null);
   const [chatPlayer, setChatPlayer] = useState(null);
+  const [sfxOn, setSfx] = useState(isSfxOn());
   const matchRef = useRef(match);
+  const seenEvents = useRef(match.events.length);
 
   const m = matchRef.current;
   const done = m.finished;
+
+  // 새로 생긴 경기 이벤트마다 효과음 재생. 대량 추가(결과 바로 보기/승부차기)는 휘슬만.
+  useEffect(() => {
+    const evs = m.events;
+    if (seenEvents.current >= evs.length) return;
+    const fresh = evs.slice(seenEvents.current);
+    seenEvents.current = evs.length;
+    if (fresh.length > 4) {
+      if (fresh.some((e) => e.type === 'end')) playFinalWhistle();
+    } else {
+      fresh.forEach(playEventSound);
+    }
+  });
 
   useEffect(() => {
     if (done || paused || benchOpen) return undefined;
@@ -115,6 +131,13 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
         </div>
 
         <div className="match-actions">
+          <button
+            className="btn ghost"
+            onClick={() => { const v = !sfxOn; setSfx(v); setSfxOn(v); }}
+            title={t(sfxOn ? 'match.sfxOn' : 'match.sfxOff')}
+          >
+            {t(sfxOn ? 'match.sfxOn' : 'match.sfxOff')}
+          </button>
           {!done && (
             <>
               <button className="btn ghost" onClick={() => setPaused((p) => !p)}>
