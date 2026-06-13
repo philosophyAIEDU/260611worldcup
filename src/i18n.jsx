@@ -132,6 +132,7 @@ const STRINGS = {
   'lineup.board': { ko: '전술 보드', en: 'Tactics Board' },
   'lineup.formation': { ko: '포메이션', en: 'Formation' },
   'lineup.mentality': { ko: '성향', en: 'Mentality' },
+  'lineup.playstyle': { ko: '팀 전술', en: 'Team Tactic' },
   'lineup.reset': { ko: '↺ 추천 선발로 초기화', en: '↺ Reset to suggested XI' },
   'lineup.hintPicked': {
     ko: ({ p }) => `${p} 선수와 교체할 벤치의 동일 포지션 선수를 선택하세요.`,

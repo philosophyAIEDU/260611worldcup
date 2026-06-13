@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TEAMS } from '../data/teams/index.js';
 import { useLang, runSummaryText } from '../i18n.jsx';
+import { playCeremony } from '../engine/sfx.js';
 import Bracket from './Bracket.jsx';
 import Flag from './Flag.jsx';
 
@@ -9,6 +10,11 @@ export default function EndScreen({ game, onRestart }) {
   const champ = game.champion ? TEAMS[game.champion] : null;
   const iWon = game.champion === game.myTeam;
   const me = TEAMS[game.myTeam];
+
+  // 우승 시 세리머니 팡파레.
+  useEffect(() => {
+    if (iWon) playCeremony();
+  }, [iWon]);
 
   return (
     <div>

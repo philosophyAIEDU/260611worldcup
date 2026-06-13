@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
-import { FORMATIONS, MENTALITIES, autoLineup } from '../engine/matchEngine.js';
-import { formationLabel, mentalityLabel } from '../engine/labels.js';
+import { FORMATIONS, MENTALITIES, PLAYSTYLES, autoLineup, defaultPlaystyle } from '../engine/matchEngine.js';
+import { formationLabel, mentalityLabel, playstyleLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
@@ -54,6 +54,7 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
 
   const [formation, setFormation] = useState('4-3-3');
   const [mentality, setMentality] = useState('balanced');
+  const [playstyle, setPlaystyle] = useState(() => defaultPlaystyle(myTeam.code));
   const [lineup, setLineup] = useState(() => autoLineup(squad, '4-3-3'));
   const [picked, setPicked] = useState(null); // 교체 대상으로 선택된 선발 선수 이름
   const [chatPlayer, setChatPlayer] = useState(null); // 대화 중인 선수
@@ -90,14 +91,14 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
         ? `[Match] ${label}${knockout ? ' (knockout — extra time/penalties if drawn)' : ' (group stage)'} — ${tn(myTeam)} (FIFA #${myTeam.ranking}, rating ${myTeam.rating}) vs ${tn(oppTeam)} (FIFA #${oppTeam.ranking}, rating ${oppTeam.rating})`
         : `[경기] ${label}${knockout ? ' (토너먼트 — 무승부 시 연장/승부차기)' : ' (조별리그)'} — ${tn(myTeam)}(FIFA ${myTeam.ranking}위, 전력 ${myTeam.rating}) vs ${tn(oppTeam)}(FIFA ${oppTeam.ranking}위, 전력 ${oppTeam.rating})`,
       `${en ? '[Opponent key players]' : '[상대 핵심 선수]'} ${oppStars || (en ? 'none' : '정보 없음')}`,
-      `${en ? '[Our tactics]' : '[현재 우리 전술]'} ${formation} (${formationLabel(formation, lang)}), ${mentalityLabel(mentality, lang)}`,
+      `${en ? '[Our tactics]' : '[현재 우리 전술]'} ${formation} (${formationLabel(formation, lang)}), ${mentalityLabel(mentality, lang)}, ${playstyleLabel(playstyle, lang)}`,
       `${en ? '[Our starting XI]' : '[우리 선발 11]'} ${list}`,
       `${en ? '[Our bench]' : '[우리 벤치]'} ${benchList}`,
       en
         ? '[Rules] Mentality: attacking = more goals scored & conceded; defensive = fewer of both. Player condition varies 70-100% each match; if the ranking gap is 20+ and the weaker team\'s star is 90%+ condition, an upset becomes much more likely. Max 5 substitutions.'
         : `[게임 규칙] 성향: 공격적=득점↑실점↑, 수비적=득점↓실점↓. 선수 컨디션은 매 경기 70~100%로 변하며, 랭킹 차 20위 이상일 때 약팀 스타가 90% 이상 컨디션이면 업셋 확률이 크게 오른다. 교체는 경기당 5명.`,
     ].join('\n');
-  }, [starters, bench, formation, mentality, myTeam, oppTeam, label, knockout, lang]);
+  }, [starters, bench, formation, mentality, playstyle, myTeam, oppTeam, label, knockout, lang]);
 
   const coachQuickPrompts = [
     { label: t('coach.q.scout'), prompt: t('coach.p.scout') },
@@ -141,6 +142,18 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
           <button className="chip" style={{ marginLeft: 'auto' }} onClick={() => changeFormation(formation)}>
             {t('lineup.reset')}
           </button>
+        </div>
+        <div className="tactic-row">
+          <span className="tactic-title">{t('lineup.playstyle')}</span>
+          {Object.keys(PLAYSTYLES).map((k) => (
+            <button
+              key={k}
+              className={`chip ${playstyle === k ? 'active' : ''}`}
+              onClick={() => setPlaystyle(k)}
+            >
+              {playstyleLabel(k, lang)}
+            </button>
+          ))}
         </div>
         <p className="hint">
           {picked ? t('lineup.hintPicked', { p: pn(pickedPlayer) }) : t('lineup.hintDefault')}
@@ -188,7 +201,7 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
 
       <div className="match-actions">
         <button className="btn ghost" onClick={onBack}>{t('common.back')}</button>
-        <button className="btn big" onClick={() => onKickoff({ lineup, formation, mentality })}>
+        <button className="btn big" onClick={() => onKickoff({ lineup, formation, mentality, playstyle })}>
           {t('lineup.kickoff')}
         </button>
       </div>

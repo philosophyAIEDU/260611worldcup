@@ -152,11 +152,60 @@ export function playCard() {
   blow(t + 0.18, 0.24);
 }
 
-// 골! — 관중 함성 + 상승하는 경적 화음.
+// 금관(브라스) 한 음 — 팡파레/세리머니용.
+function brass(start, freq, dur, vol) {
+  const c = ctx;
+  const o1 = c.createOscillator();
+  o1.type = 'sawtooth';
+  o1.frequency.value = freq;
+  const o2 = c.createOscillator();
+  o2.type = 'square';
+  o2.frequency.value = freq;
+  const o2g = c.createGain();
+  o2g.gain.value = 0.3;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0, start);
+  g.gain.linearRampToValueAtTime(vol, start + 0.03);
+  g.gain.setValueAtTime(vol, start + dur * 0.6);
+  g.gain.exponentialRampToValueAtTime(0.0008, start + dur);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 3200;
+  o1.connect(g);
+  o2.connect(o2g);
+  o2g.connect(g);
+  g.connect(lp);
+  lp.connect(master);
+  o1.start(start);
+  o2.start(start);
+  o1.stop(start + dur);
+  o2.stop(start + dur);
+}
+
+// 저음 임팩트(쿵).
+function thump(start) {
+  const c = ctx;
+  const o = c.createOscillator();
+  o.type = 'sine';
+  const g = c.createGain();
+  o.frequency.setValueAtTime(150, start);
+  o.frequency.exponentialRampToValueAtTime(55, start + 0.4);
+  g.gain.setValueAtTime(0.5, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+  o.connect(g);
+  g.connect(master);
+  o.start(start);
+  o.stop(start + 0.5);
+}
+
+// 골! — 함성(저+고) + 저음 임팩트 + 상승 경적 화음 + 관중 앰비언스 부풀림.
 export function playGoal() {
   if (!enabled || !ac()) return;
   const t = ctx.currentTime;
-  crowd(t, 1.6, 0.5, 850);
+  crowd(t, 2.0, 0.55, 900);
+  crowd(t + 0.05, 1.4, 0.3, 1700);
+  swellAmbience();
+  thump(t);
   const notes = [330, 440, 550];
   for (const f of notes) {
     const o = ctx.createOscillator();
@@ -174,6 +223,78 @@ export function playGoal() {
     o.start(s);
     o.stop(s + 0.72);
   }
+}
+
+// 우승 세리머니 — 팡파레(상승 후 화음) + 대형 함성.
+export function playCeremony() {
+  if (!enabled || !ac()) return;
+  const t = ctx.currentTime;
+  crowd(t, 2.8, 0.5, 800);
+  crowd(t + 0.1, 2.2, 0.32, 1700);
+  thump(t + 0.05);
+  const seq = [[523.25, 0.0], [659.25, 0.16], [783.99, 0.32], [1046.5, 0.48]];
+  for (const [f, dt] of seq) brass(t + dt, f, 0.22, 0.16);
+  for (const f of [523.25, 659.25, 783.99, 1046.5]) brass(t + 0.66, f, 1.0, 0.1);
+}
+
+// ── 관중 앰비언스(경기 중 배경 소음) ───────────────────────────────
+let ambienceNode = null;
+let ambienceGain = null;
+
+export function startAmbience() {
+  if (!enabled || !ac()) return;
+  if (ambienceNode) return;
+  const c = ctx;
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c, 2);
+  src.loop = true;
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 700;
+  lp.Q.value = 0.3;
+  const hp = c.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 120;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, c.currentTime);
+  g.gain.linearRampToValueAtTime(0.06, c.currentTime + 1.5);
+  src.connect(lp);
+  lp.connect(hp);
+  hp.connect(g);
+  g.connect(master);
+  src.start();
+  ambienceNode = src;
+  ambienceGain = g;
+}
+
+export function stopAmbience() {
+  if (!ambienceNode || !ctx) return;
+  const node = ambienceNode;
+  try {
+    ambienceGain.gain.cancelScheduledValues(ctx.currentTime);
+    ambienceGain.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
+  } catch {
+    /* 무시 */
+  }
+  setTimeout(() => {
+    try {
+      node.stop();
+    } catch {
+      /* 무시 */
+    }
+  }, 1200);
+  ambienceNode = null;
+  ambienceGain = null;
+}
+
+// 골 등 큰 장면에서 앰비언스를 잠깐 끌어올렸다 가라앉힘.
+function swellAmbience() {
+  if (!ambienceGain || !ctx) return;
+  const t = ctx.currentTime;
+  ambienceGain.gain.cancelScheduledValues(t);
+  ambienceGain.gain.setValueAtTime(Math.max(0.0001, ambienceGain.gain.value), t);
+  ambienceGain.gain.linearRampToValueAtTime(0.2, t + 0.12);
+  ambienceGain.gain.setTargetAtTime(0.06, t + 0.35, 1.2);
 }
 
 // 선방/위기 — 짧고 낮은 함성.
