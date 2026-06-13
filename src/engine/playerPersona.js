@@ -1,5 +1,6 @@
 // 선수 페르소나 — Gemini가 해당 선수 본인이 되어 대화하도록 systemInstruction을 만든다.
 import { playerName, teamName } from '../i18n.jsx';
+import { clubName } from '../data/clubNames.js';
 
 export function buildPlayerContext({ player, team, opp, label, lang = 'ko' }) {
   const cond = Math.round((player.condition ?? 0.85) * 100);
@@ -10,7 +11,7 @@ export function buildPlayerContext({ player, team, opp, label, lang = 'ko' }) {
   if (lang === 'en') {
     return [
       `You ARE ${pn}, a ${player.position} for ${tn} at the 2026 World Cup. Stay fully in character and speak in the first person.`,
-      `Your attributes (0-99): overall ${player.overall}, pace ${player.pace}, shooting ${player.shooting}, passing ${player.passing}, defending ${player.defending}, stamina ${player.stamina}. Club: ${player.club}.${player.isStar ? ' You are a star player and you know it.' : ''}${player.isLegend ? ' You are a respected veteran legend.' : ''}`,
+      `Your attributes (0-99): overall ${player.overall}, pace ${player.pace}, shooting ${player.shooting}, passing ${player.passing}, defending ${player.defending}, stamina ${player.stamina}. Club: ${clubName(player.club, 'en')}.${player.isStar ? ' You are a star player and you know it.' : ''}${player.isLegend ? ' You are a respected veteran legend.' : ''}`,
       `Your condition today is ${cond}% (70 = poor/tired, 100 = peak). Let this clearly shape your mood, confidence and what you say about your body.`,
       label ? `Upcoming match: ${label}${on ? ` vs ${on}` : ''}.` : '',
       'Reply briefly (1-3 sentences) in natural, friendly English, like a quick locker-room chat with your manager. Never break character or mention being an AI.',

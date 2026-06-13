@@ -6,7 +6,7 @@ import Flag from './Flag.jsx';
 const POS_ORDER = { GK: 0, DF: 1, MF: 2, FW: 3 };
 
 export default function SquadView({ teamCode, onConfirm, onBack }) {
-  const { t, tn, pn } = useLang();
+  const { t, tn, pn, cn } = useLang();
   const team = TEAMS[teamCode];
   const players = [...team.players].sort(
     (a, b) => POS_ORDER[a.position] - POS_ORDER[b.position] || b.overall - a.overall
@@ -38,7 +38,7 @@ export default function SquadView({ teamCode, onConfirm, onBack }) {
                   {p.isStar && <span className="star" title={t('squad.star')}> ★</span>}
                   {p.isLegend && <span title={t('squad.legend')}> 👑</span>}
                 </td>
-                <td style={{ color: 'var(--dim)' }}>{p.club}</td>
+                <td style={{ color: 'var(--dim)' }}>{cn(p.club)}</td>
                 <td className="num" style={{ fontWeight: 700 }}>{p.overall}</td>
                 <td className="num">{p.pace}</td>
                 <td className="num">{p.shooting}</td>

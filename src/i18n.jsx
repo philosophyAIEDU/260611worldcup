@@ -1,5 +1,6 @@
 // 다국어(한국어/영어) 지원 — 언어 컨텍스트, 번역 사전, 팀/선수명 헬퍼.
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { clubName } from './data/clubNames.js';
 
 const LANG_KEY = 'tactix2026-lang';
 
@@ -347,9 +348,10 @@ export function LangProvider({ children }) {
   const t = (key, vars) => translate(lang, key, vars);
   const tn = (team) => teamName(team, lang);
   const pn = (p) => playerName(p, lang);
+  const cn = (club) => clubName(club, lang);
 
   return (
-    <LangContext.Provider value={{ lang, setLang, chosen, t, tn, pn }}>
+    <LangContext.Provider value={{ lang, setLang, chosen, t, tn, pn, cn }}>
       {children}
     </LangContext.Provider>
   );
