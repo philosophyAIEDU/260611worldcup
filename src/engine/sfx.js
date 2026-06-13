@@ -1,11 +1,29 @@
-// 효과음 — Web Audio API로 합성한다(에셋 파일 불필요, 오프라인 동작).
+// 효과음 — 휘슬 등은 Web Audio API로 합성하고, 골은 실제 음원(goal.m4a)을 재생한다.
 // 브라우저 자동재생 정책상 AudioContext는 사용자 제스처 이후에만 소리가 난다.
 // 경기 화면까지 오는 동안 버튼 클릭이 있으므로 resume()이 허용된다.
+import goalUrl from '../assets/audio/goal.m4a';
 
 const STORAGE_KEY = 'tactix2026-sfx';
 let ctx = null;
 let master = null;
 let enabled = loadEnabled();
+
+// 골 음원 — HTMLAudioElement로 재생(합성음보다 강력).
+let goalAudio = null;
+function playGoalFile() {
+  try {
+    if (!goalAudio) {
+      goalAudio = new Audio(goalUrl);
+      goalAudio.volume = 1.0;
+    }
+    goalAudio.currentTime = 0;
+    const pr = goalAudio.play();
+    if (pr && pr.catch) pr.catch(() => {});
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function loadEnabled() {
   try {
@@ -198,13 +216,18 @@ function thump(start) {
   o.stop(start + 0.5);
 }
 
-// 골! — 함성(저+고) + 저음 임팩트 + 상승 경적 화음 + 관중 앰비언스 부풀림.
+// 골! — 실제 음원(goal.m4a) 재생 + 관중 앰비언스 부풀림.
+// 음원 재생이 불가하면 합성음으로 대체한다.
 export function playGoal() {
-  if (!enabled || !ac()) return;
+  if (!enabled) return;
+  const fileOk = playGoalFile();
+  if (!ac()) return;
+  swellAmbience();
+  if (fileOk) return; // 음원이 재생되면 합성음은 생략
+  // 폴백: 합성 골 사운드
   const t = ctx.currentTime;
   crowd(t, 2.0, 0.55, 900);
   crowd(t + 0.05, 1.4, 0.3, 1700);
-  swellAmbience();
   thump(t);
   const notes = [330, 440, 550];
   for (const f of notes) {

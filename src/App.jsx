@@ -20,6 +20,7 @@ import MatchView from './components/MatchView.jsx';
 import Bracket from './components/Bracket.jsx';
 import EndScreen from './components/EndScreen.jsx';
 import LearnCoach from './components/LearnCoach.jsx';
+import MusicPlayer from './components/MusicPlayer.jsx';
 import Flag from './components/Flag.jsx';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -225,6 +226,7 @@ export default function App() {
         <div className="logo">TACTIX <span>2026</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div className="sub">{t('app.sub')}</div>
+          <MusicPlayer />
           <div className="lang-toggle">
             <button className={lang === 'ko' ? 'active' : ''} onClick={() => setLang('ko')}>KO</button>
             <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>

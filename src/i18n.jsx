@@ -24,6 +24,9 @@ function storeLang(l) {
 // 값은 문자열 또는 vars를 받는 함수. {var} 자리표시자는 자동 치환된다.
 const STRINGS = {
   'app.sub': { ko: '2026 FIFA 북중미 월드컵 시뮬레이터', en: '2026 FIFA World Cup Simulator' },
+  'music.play': { ko: '배경음악 재생', en: 'Play background music' },
+  'music.pause': { ko: '배경음악 정지', en: 'Pause background music' },
+  'music.track': { ko: ({ n }) => `배경음악 ${n}번`, en: ({ n }) => `Track ${n}` },
 
   // 언어 선택 화면
   'lang.title': { ko: '언어를 선택하세요', en: 'Choose your language' },

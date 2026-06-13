@@ -323,6 +323,18 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 }
 .lang-toggle button.active { background: var(--green); color: #fff; }
 
+.music-toggle {
+  display: inline-flex; align-items: center; border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px; overflow: hidden;
+}
+.music-toggle button {
+  background: transparent; border: none; color: #b9c8de; cursor: pointer;
+  font-weight: 800; font-size: 0.78rem; padding: 5px 10px; font-family: inherit;
+}
+.music-toggle button.play { color: #fff; }
+.music-toggle button.play.on { background: var(--green); }
+.music-toggle button.trk.active { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
 /* ── 언어 선택(첫) 화면 ───────────────────────── */
 .lang-select {
   min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
