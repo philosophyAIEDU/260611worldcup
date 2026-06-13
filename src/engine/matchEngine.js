@@ -26,8 +26,11 @@ export const FORMATIONS = {
   '4-3-3': { DF: 4, MF: 3, FW: 3, atk: 1.05, def: 1.0, label: '4-3-3 (공격 축구)' },
   '4-4-2': { DF: 4, MF: 4, FW: 2, atk: 1.0, def: 0.97, label: '4-4-2 (클래식 밸런스)' },
   '4-2-3-1': { DF: 4, MF: 5, FW: 1, atk: 0.95, def: 0.92, label: '4-2-3-1 (중원 장악)' },
+  '4-1-4-1': { DF: 4, MF: 5, FW: 1, atk: 0.93, def: 0.88, label: '4-1-4-1 (안정적 중원)' },
+  '3-4-3': { DF: 3, MF: 4, FW: 3, atk: 1.12, def: 1.1, label: '3-4-3 (전면 공격)' },
   '3-5-2': { DF: 3, MF: 5, FW: 2, atk: 1.08, def: 1.08, label: '3-5-2 (하이리스크 공격)' },
   '5-3-2': { DF: 5, MF: 3, FW: 2, atk: 0.9, def: 0.87, label: '5-3-2 (선수비 역습)' },
+  '5-4-1': { DF: 5, MF: 4, FW: 1, atk: 0.82, def: 0.8, label: '5-4-1 (초수비/잠그기)' },
 };
 
 export const MENTALITIES = {
@@ -35,6 +38,40 @@ export const MENTALITIES = {
   balanced: { atk: 1.0, def: 1.0, label: '균형' },
   defensive: { atk: 0.8, def: 0.84, label: '수비적' },
 };
+
+// ── 팀 전술(플레이스타일) ─────────────────────────────────────────
+// atk/def: 득실 확률 배수. bias: 골 유형별 가중치 배수(세트피스·역습 등 색깔 부여).
+// 골 유형 키: counter, freekick, corner, penalty, solo, combo, longshot, header, rebound
+export const PLAYSTYLES = {
+  balanced: { atk: 1.0, def: 1.0, bias: {} },
+  total: { atk: 1.12, def: 1.06, bias: { combo: 1.7, solo: 1.4, longshot: 1.2 } }, // 토탈 사커
+  tiki: { atk: 1.05, def: 0.92, bias: { combo: 2.1, solo: 1.2 } }, // 티키타카(점유율)
+  counter: { atk: 1.07, def: 0.9, bias: { counter: 2.6, longshot: 1.3 } }, // 역습
+  highpress: { atk: 1.09, def: 0.96, bias: { counter: 1.7, rebound: 1.6, combo: 1.2 } }, // 전방 압박
+  setpiece: { atk: 1.05, def: 1.0, bias: { freekick: 2.6, corner: 2.3, header: 1.9, penalty: 1.3 } }, // 세트피스
+  longball: { atk: 1.04, def: 1.0, bias: { header: 2.2, corner: 1.8, rebound: 1.6, longshot: 1.2 } }, // 롱볼/롱스로인
+  wing: { atk: 1.06, def: 1.0, bias: { header: 1.8, corner: 1.5, combo: 1.3 } }, // 측면 돌파/크로스
+  catenaccio: { atk: 0.86, def: 0.82, bias: { counter: 2.0, longshot: 1.2 } }, // 빗장수비
+  // 파상공세: 기본도 공격적, Q4(69분~) 이후 추가 보정(goalProb에서 처리)
+  allout: { atk: 1.25, def: 1.32, bias: { combo: 1.6, header: 1.5, corner: 1.4, longshot: 1.2, counter: 0.4 } }, // 파상공세
+};
+
+// 국가대표별 기본 색깔(감독이 바꿀 수 있음). 없으면 balanced.
+export const TEAM_PLAYSTYLE = {
+  NED: 'total', BRA: 'total',
+  ESP: 'tiki', CRO: 'tiki', POR: 'wing',
+  FRA: 'counter', BEL: 'counter', SEN: 'counter', MAR: 'counter', POL: 'counter',
+  GER: 'highpress', JPN: 'highpress', KOR: 'highpress', USA: 'highpress',
+  ENG: 'setpiece', DEN: 'setpiece',
+  NOR: 'longball', SWE: 'longball', AUS: 'longball', NZL: 'longball',
+  MEX: 'wing', NGA: 'wing', SRB: 'wing', COL: 'wing', CIV: 'wing',
+  ITA: 'catenaccio', URU: 'catenaccio', IRN: 'catenaccio', GRE: 'catenaccio',
+  ARG: 'tiki', SUI: 'balanced',
+};
+
+export function defaultPlaystyle(code) {
+  return TEAM_PLAYSTYLE[code] || 'balanced';
+}
 
 export const MAX_SUBS = 5;
 
@@ -73,6 +110,7 @@ function buildSide(team, setup = {}) {
     bench,
     formation,
     mentality: setup.mentality || 'balanced',
+    playstyle: PLAYSTYLES[setup.playstyle] ? setup.playstyle : defaultPlaystyle(team.code),
     manual: !!setup.manual,
     subsUsed: 0,
     upsetBonus: 0,
@@ -108,9 +146,10 @@ function applyUpset(home, away) {
 // ── 이벤트 생성 헬퍼 ─────────────────────────────────────────────
 const GOAL_TYPE_KEYS = ['counter', 'freekick', 'corner', 'penalty', 'solo', 'combo', 'longshot', 'header', 'rebound'];
 
-function pickGoalType() {
+function pickGoalType(side) {
   const weights = { combo: 22, counter: 16, solo: 13, header: 12, corner: 10, longshot: 9, rebound: 8, freekick: 6, penalty: 4 };
-  return weightedPick(GOAL_TYPE_KEYS.map((k) => ({ k })), (o) => weights[o.k]).k;
+  const bias = (side && PLAYSTYLES[side.playstyle]?.bias) || {};
+  return weightedPick(GOAL_TYPE_KEYS.map((k) => ({ k })), (o) => weights[o.k] * (bias[o.k] || 1)).k;
 }
 
 function pickScorer(side, type) {
@@ -160,21 +199,29 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     out.push(ev);
   };
 
-  const goalProb = (atkSide, defSide) => {
+  const goalProb = (atkSide, defSide, minute = 0) => {
     const total = home.strength + away.strength;
     const edge = (atkSide.strength - defSide.strength) / total;
-    const p =
+    let p =
       (2.6 / 90) * (0.5 + edge * 2.6) *
-      FORMATIONS[atkSide.formation].atk * MENTALITIES[atkSide.mentality].atk *
-      FORMATIONS[defSide.formation].def * MENTALITIES[defSide.mentality].def;
+      FORMATIONS[atkSide.formation].atk * MENTALITIES[atkSide.mentality].atk * PLAYSTYLES[atkSide.playstyle].atk *
+      FORMATIONS[defSide.formation].def * MENTALITIES[defSide.mentality].def * PLAYSTYLES[defSide.playstyle].def;
+    // 파상공세: Q4(69분~) 막판 총공세. 늦을수록 강해짐(최대 +60%).
+    if (atkSide.playstyle === 'allout' && minute >= 69) {
+      p *= 1 + Math.min(0.6, ((minute - 68) / 22) * 0.6);
+    }
+    // 상대가 파상공세로 올라오면 뒷공간이 비어 우리 득점 기회도 늘어남.
+    if (defSide.playstyle === 'allout' && minute >= 69) {
+      p *= 1.18;
+    }
     return Math.max(0.004, p);
   };
 
   const simMinute = (minute, out) => {
     for (const [sideKey, sd, opp] of [['home', home, away], ['away', away, home]]) {
       const r = rand();
-      if (r < goalProb(sd, opp)) {
-        const type = pickGoalType();
+      if (r < goalProb(sd, opp, minute)) {
+        const type = pickGoalType(sd);
         const scorer = pickScorer(sd, type);
         const assister = type === 'penalty' || type === 'freekick' || type === 'solo' ? null : pickAssister(sd, scorer);
         if (sideKey === 'home') m.hg++; else m.ag++;
@@ -266,6 +313,11 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
   m.setMentality = (sideKey, mentality) => {
     const sd = sideKey === 'home' ? home : away;
     if (MENTALITIES[mentality]) sd.mentality = mentality;
+  };
+
+  m.setPlaystyle = (sideKey, playstyle) => {
+    const sd = sideKey === 'home' ? home : away;
+    if (PLAYSTYLES[playstyle]) sd.playstyle = playstyle;
   };
 
   // 경기 중 포메이션(전술 형태) 변경 — 같은 11명으로 공/수 균형만 바뀐다.

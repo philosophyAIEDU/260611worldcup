@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
-import { FORMATIONS, MENTALITIES, MAX_SUBS } from '../engine/matchEngine.js';
-import { formationLabel, mentalityLabel } from '../engine/labels.js';
+import { FORMATIONS, MENTALITIES, PLAYSTYLES, MAX_SUBS } from '../engine/matchEngine.js';
+import { formationLabel, mentalityLabel, playstyleLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
 import PlayerChat from './PlayerChat.jsx';
+import { isSfxOn, setSfxOn, playEventSound, playFinalWhistle, startAmbience, stopAmbience } from '../engine/sfx.js';
 
 function condClass(c) {
   if (c >= 0.9) return 'cond-hot';
@@ -30,10 +31,32 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const [benchOpen, setBenchOpen] = useState(false);
   const [pickedOut, setPickedOut] = useState(null);
   const [chatPlayer, setChatPlayer] = useState(null);
+  const [sfxOn, setSfx] = useState(isSfxOn());
   const matchRef = useRef(match);
+  const seenEvents = useRef(match.events.length);
 
   const m = matchRef.current;
   const done = m.finished;
+
+  // 새로 생긴 경기 이벤트마다 효과음 재생. 대량 추가(결과 바로 보기/승부차기)는 휘슬만.
+  useEffect(() => {
+    const evs = m.events;
+    if (seenEvents.current >= evs.length) return;
+    const fresh = evs.slice(seenEvents.current);
+    seenEvents.current = evs.length;
+    if (fresh.length > 4) {
+      if (fresh.some((e) => e.type === 'end')) playFinalWhistle();
+    } else {
+      fresh.forEach(playEventSound);
+    }
+  });
+
+  // 경기 진행 중 관중 앰비언스 루프. 종료/음소거 시 정지.
+  useEffect(() => {
+    if (!done && sfxOn) startAmbience();
+    else stopAmbience();
+    return () => stopAmbience();
+  }, [done, sfxOn]);
 
   useEffect(() => {
     if (done || paused || benchOpen) return undefined;
@@ -75,8 +98,8 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
         ? `[Situation] ${roundLabel}, ${m.minute}', score ${tn(mine.team)} ${myGoals} - ${oppGoals} ${tn(opp)}`
         : `[상황] ${roundLabel}, 현재 ${m.minute}분, 스코어 ${tn(mine.team)} ${myGoals} - ${oppGoals} ${tn(opp)}`,
       en
-        ? `[Our tactics] ${mine.formation}, ${mentalityLabel(mine.mentality, 'en')}, subs ${mine.subsUsed}/${MAX_SUBS}`
-        : `[우리 전술] 포메이션 ${mine.formation}, 성향 ${mentalityLabel(mine.mentality, 'ko')}, 교체 ${mine.subsUsed}/${MAX_SUBS} 사용`,
+        ? `[Our tactics] ${mine.formation}, ${mentalityLabel(mine.mentality, 'en')}, ${playstyleLabel(mine.playstyle, 'en')}, subs ${mine.subsUsed}/${MAX_SUBS}`
+        : `[우리 전술] 포메이션 ${mine.formation}, 성향 ${mentalityLabel(mine.mentality, 'ko')}, 팀전술 ${playstyleLabel(mine.playstyle, 'ko')}, 교체 ${mine.subsUsed}/${MAX_SUBS} 사용`,
       `${en ? '[On the pitch]' : '[필드 위 11명]'} ${mine.eleven.map((p) => `${p.position} ${pn(p)}(${p.overall}/${Math.round(p.condition * 100)}%)`).join(', ')}`,
       `${en ? '[Bench]' : '[벤치]'} ${mine.bench.map((p) => `${p.position} ${pn(p)}(${p.overall}/${Math.round(p.condition * 100)}%)`).join(', ')}`,
       en
@@ -115,6 +138,13 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
         </div>
 
         <div className="match-actions">
+          <button
+            className="btn ghost"
+            onClick={() => { const v = !sfxOn; setSfx(v); setSfxOn(v); }}
+            title={t(sfxOn ? 'match.sfxOn' : 'match.sfxOff')}
+          >
+            {t(sfxOn ? 'match.sfxOn' : 'match.sfxOff')}
+          </button>
           {!done && (
             <>
               <button className="btn ghost" onClick={() => setPaused((p) => !p)}>
@@ -169,6 +199,18 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               </button>
             ))}
             <span className="badge">{t('match.subsUsed', { a: mine.subsUsed, b: MAX_SUBS })}</span>
+          </div>
+          <div className="tactic-row">
+            <span className="tactic-title">{t('lineup.playstyle')}</span>
+            {Object.keys(PLAYSTYLES).map((k) => (
+              <button
+                key={k}
+                className={`chip ${mine.playstyle === k ? 'active' : ''}`}
+                onClick={() => { m.setPlaystyle(mySide, k); force((x) => x + 1); }}
+              >
+                {playstyleLabel(k, lang)}
+              </button>
+            ))}
           </div>
 
           <p className="hint">

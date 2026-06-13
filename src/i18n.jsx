@@ -1,5 +1,6 @@
 // 다국어(한국어/영어) 지원 — 언어 컨텍스트, 번역 사전, 팀/선수명 헬퍼.
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { clubName } from './data/clubNames.js';
 
 const LANG_KEY = 'tactix2026-lang';
 
@@ -131,6 +132,7 @@ const STRINGS = {
   'lineup.board': { ko: '전술 보드', en: 'Tactics Board' },
   'lineup.formation': { ko: '포메이션', en: 'Formation' },
   'lineup.mentality': { ko: '성향', en: 'Mentality' },
+  'lineup.playstyle': { ko: '팀 전술', en: 'Team Tactic' },
   'lineup.reset': { ko: '↺ 추천 선발로 초기화', en: '↺ Reset to suggested XI' },
   'lineup.hintPicked': {
     ko: ({ p }) => `${p} 선수와 교체할 벤치의 동일 포지션 선수를 선택하세요.`,
@@ -155,6 +157,8 @@ const STRINGS = {
   'match.normal': { ko: '▶ 보통 속도', en: '▶ Normal' },
   'match.instructions': { ko: ({ n }) => `🧠 작전 지시 (${n}회 교체 가능)`, en: ({ n }) => `🧠 Instructions (${n} subs left)` },
   'match.skip': { ko: '결과 바로 보기', en: 'Skip to result' },
+  'match.sfxOn': { ko: '🔊 효과음', en: '🔊 Sound' },
+  'match.sfxOff': { ko: '🔇 효과음', en: '🔇 Muted' },
   'match.continue': { ko: '계속 →', en: 'Continue →' },
   'match.opsTitle': { ko: ({ n }) => `🧠 작전 지시 — ${n}분`, en: ({ n }) => `🧠 Touchline Instructions — ${n}'` },
   'match.close': { ko: '닫기 ✕ (경기 재개)', en: 'Close ✕ (resume)' },
@@ -347,9 +351,10 @@ export function LangProvider({ children }) {
   const t = (key, vars) => translate(lang, key, vars);
   const tn = (team) => teamName(team, lang);
   const pn = (p) => playerName(p, lang);
+  const cn = (club) => clubName(club, lang);
 
   return (
-    <LangContext.Provider value={{ lang, setLang, chosen, t, tn, pn }}>
+    <LangContext.Provider value={{ lang, setLang, chosen, t, tn, pn, cn }}>
       {children}
     </LangContext.Provider>
   );
