@@ -43,5 +43,16 @@ export async function askCoach(apiKey, systemContext, history) {
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('');
   if (!text) throw new Error('Empty AI response');
-  return text;
+  return stripMarkdown(text);
+}
+
+// 채팅 UI는 평문으로 표시하므로 마크다운 강조 기호(**, *, __, # 등)를 제거한다.
+function stripMarkdown(s) {
+  return s
+    .replace(/\*\*([^*]+)\*\*/g, '$1') // **굵게**
+    .replace(/\*([^*]+)\*/g, '$1') // *기울임*
+    .replace(/__([^_]+)__/g, '$1') // __굵게__
+    .replace(/\*+/g, '') // 남은 별표 제거
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '') // 제목 표기 제거
+    .trim();
 }
