@@ -311,10 +311,52 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 .upset-tag { color: var(--gold); font-weight: 800; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── 언어 토글 (상단바) ───────────────────────── */
+.lang-toggle {
+  display: inline-flex; border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px; overflow: hidden;
+}
+.lang-toggle button {
+  background: transparent; border: none; color: #b9c8de; cursor: pointer;
+  font-weight: 800; font-size: 0.78rem; padding: 5px 12px; font-family: inherit;
+}
+.lang-toggle button.active { background: var(--green); color: #fff; }
+
+/* ── 언어 선택(첫) 화면 ───────────────────────── */
+.lang-select {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.lang-hero { text-align: center; max-width: 720px; }
+.lang-hero .logo.big { font-size: 2.6rem; letter-spacing: 2px; color: var(--navy); font-weight: 800; }
+.lang-hero .logo.big span { color: var(--green); }
+.lang-hero h1 { font-size: 1.6rem; margin: 18px 0 12px; }
+.lang-hero p { color: var(--dim); font-weight: 600; line-height: 1.7; margin-bottom: 30px; }
+.lang-cards { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+.lang-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 220px; padding: 26px 20px; cursor: pointer;
+  background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(13, 34, 64, 0.08); transition: transform 0.12s, border-color 0.12s;
+  font-family: inherit;
+}
+.lang-card:hover { transform: translateY(-3px); border-color: var(--green); }
+.lang-card.en:hover { border-color: var(--navy); }
+.lang-card .lang-flag { font-size: 2.6rem; }
+.lang-card .lang-name { font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+.lang-card .lang-desc { font-size: 0.84rem; color: var(--dim); font-weight: 600; }
+
+/* ── AI 영어 코치 ─────────────────────────────── */
+.learn-panel { border: 2px solid var(--gold); }
+.learn-panel > h3 { color: var(--gold); }
+.coach-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.coach-learn .coach-msg.user { background: linear-gradient(135deg, #d99a14 0%, #b07700 100%); }
+
 @media (max-width: 760px) {
   .grid2 { grid-template-columns: 1fr; }
   .hero h1 { font-size: 2.4rem; }
   .hero::before { width: 240px; height: 240px; }
   .scoreboard { font-size: 1.1rem; gap: 12px; }
   .scoreboard .score { font-size: 2rem; }
+  .lang-card { width: 100%; }
 }

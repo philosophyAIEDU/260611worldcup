@@ -1,8 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { askCoach, getApiKey, setApiKey } from '../engine/aiCoach.js';
+import { useLang } from '../i18n.jsx';
 
-// AI 수석코치 채팅 패널. context: 현재 경기/전술 상황 요약 문자열.
-export default function CoachChat({ context }) {
+// Gemini 채팅 패널. 두 가지 용도로 재사용:
+//   variant='coach' → AI 수석코치(전술 상담)
+//   variant='learn' → AI 영어 코치(영어 학습)
+// context: Gemini systemInstruction 문자열. quickPrompts: [{label, prompt}].
+export default function CoachChat({ context, variant = 'coach', quickPrompts = [] }) {
+  const { t } = useLang();
   const [apiKey, setKey] = useState(getApiKey());
   const [keyInput, setKeyInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -10,6 +15,12 @@ export default function CoachChat({ context }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const listRef = useRef(null);
+
+  const isLearn = variant === 'learn';
+  const titleKey = isLearn ? 'learn.title' : 'coach.title';
+  const emptyKey = isLearn ? 'learn.intro' : 'coach.empty';
+  const askKey = isLearn ? 'learn.ask' : 'coach.ask';
+  const thinkingKey = isLearn ? 'learn.thinking' : 'coach.thinking';
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -29,79 +40,83 @@ export default function CoachChat({ context }) {
     setMessages([]);
   };
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
+  const send = async (text) => {
+    const msg = (text ?? input).trim();
+    if (!msg || loading) return;
     setError('');
     setInput('');
-    const history = [...messages, { role: 'user', text }];
+    const history = [...messages, { role: 'user', text: msg }];
     setMessages(history);
     setLoading(true);
     try {
       const reply = await askCoach(apiKey, context, history);
       setMessages([...history, { role: 'model', text: reply }]);
     } catch (e) {
-      setError(`코치 연결 실패: ${e.message}`);
+      setError(t('coach.error', { m: e.message }));
       setMessages(messages); // 실패한 질문 롤백
-      setInput(text);
+      if (text == null) setInput(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="coach">
+    <div className={`coach ${isLearn ? 'coach-learn' : ''}`}>
       <div className="coach-head">
-        <span>🎙️ AI 수석코치</span>
+        <span>{t(titleKey)}</span>
         {apiKey && (
-          <button className="link-btn" onClick={resetKey}>API 키 변경</button>
+          <button className="link-btn" onClick={resetKey}>{t('coach.changeKey')}</button>
         )}
       </div>
 
       {!apiKey ? (
         <div className="coach-keybox">
-          <p>
-            전술 상담을 위해 Google Gemini API 키를 입력하세요.
-            키는 이 브라우저(localStorage)에만 저장되며 외부로 전송되지 않습니다.
-          </p>
+          <p>{t('coach.keyIntro')}</p>
           <div className="coach-keyrow">
             <input
               type="password"
-              placeholder="Gemini API 키 (AIza…)"
+              placeholder={t('coach.keyPlaceholder')}
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && saveKey()}
             />
-            <button className="btn" onClick={saveKey} disabled={!keyInput.trim()}>저장</button>
+            <button className="btn" onClick={saveKey} disabled={!keyInput.trim()}>{t('coach.save')}</button>
           </div>
-          <p className="coach-hint">
-            키 발급: Google AI Studio (aistudio.google.com) → Get API key · 사용 모델: gemini-3.1-flash-lite
-          </p>
+          <p className="coach-hint">{t('coach.keyHint')}</p>
         </div>
       ) : (
         <>
+          {quickPrompts.length > 0 && (
+            <div className="coach-quick">
+              {quickPrompts.map((q) => (
+                <button
+                  key={q.label}
+                  className="chip"
+                  disabled={loading}
+                  onClick={() => send(q.prompt)}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="coach-list" ref={listRef}>
-            {messages.length === 0 && (
-              <div className="coach-empty">
-                상대 분석, 포메이션 추천, 선발 명단 고민… 무엇이든 물어보세요.
-                코치는 현재 경기 상황과 양 팀 정보를 알고 있습니다.
-              </div>
-            )}
+            {messages.length === 0 && <div className="coach-empty">{t(emptyKey)}</div>}
             {messages.map((msg, i) => (
               <div key={i} className={`coach-msg ${msg.role}`}>{msg.text}</div>
             ))}
-            {loading && <div className="coach-msg model">전술 보드를 살펴보는 중…</div>}
+            {loading && <div className="coach-msg model">{t(thinkingKey)}</div>}
           </div>
           {error && <div className="coach-error">{error}</div>}
           <div className="coach-keyrow">
             <input
-              placeholder="코치에게 질문하기…"
+              placeholder={t(askKey)}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
               disabled={loading}
             />
-            <button className="btn" onClick={send} disabled={loading || !input.trim()}>전송</button>
+            <button className="btn" onClick={() => send()} disabled={loading || !input.trim()}>{t('coach.send')}</button>
           </div>
         </>
       )}

@@ -3,7 +3,8 @@
 // createMatch()가 반환하는 객체를 advance()로 한 분씩 진행시키며,
 // 사용자 측은 경기 중 makeSub()/setMentality()로 개입할 수 있다.
 
-import { goalText, miscText } from './commentary.js';
+import { goalText, miscText, shootoutLine } from './commentary.js';
+import { playerName, teamName } from '../i18n.jsx';
 
 const rand = () => Math.random();
 const pick = (arr) => arr[Math.floor(rand() * arr.length)];
@@ -130,6 +131,9 @@ const pickOutfielder = (side) => pick(side.eleven.filter((p) => p.position !== '
 // opts: { knockout, homeSetup, awaySetup }
 // setup: { conditions, lineup, formation, mentality, manual }
 export function createMatch(homeTeam, awayTeam, opts = {}) {
+  const lang = opts.lang || 'ko';
+  const nm = (p) => playerName(p, lang);
+  const tnm = (t) => teamName(t, lang);
   const home = buildSide(homeTeam, opts.homeSetup);
   const away = buildSide(awayTeam, opts.awaySetup);
   applyUpset(home, away);
@@ -176,17 +180,17 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
         if (sideKey === 'home') m.hg++; else m.ag++;
         m.scorers.push({ minute, side: sideKey, name: scorer.name, team: sd.team.code });
         push(out, minute, 'goal', sideKey,
-          `${goalText(type, scorer, assister)} ⚽ ${homeTeam.name} ${m.hg}-${m.ag} ${awayTeam.name}`);
+          `${goalText(type, nm(scorer), assister ? nm(assister) : null, lang)} ⚽ ${tnm(homeTeam)} ${m.hg}-${m.ag} ${tnm(awayTeam)}`);
       } else if (r < 0.045) {
         const p = pickOutfielder(sd);
-        if (rand() < 0.5) push(out, minute, 'chance', sideKey, miscText('chance', { p: p.name }));
-        else push(out, minute, 'save', sideKey, miscText('save', { p: p.name, gk: opp.eleven[0].name }));
+        if (rand() < 0.5) push(out, minute, 'chance', sideKey, miscText('chance', { p: nm(p) }, lang));
+        else push(out, minute, 'save', sideKey, miscText('save', { p: nm(p), gk: nm(opp.eleven[0]) }, lang));
       } else if (r < 0.065) {
         const p = pickOutfielder(sd);
-        if (rand() < 0.3) push(out, minute, 'yellow', sideKey, miscText('yellow', { p: p.name }));
-        else push(out, minute, 'foul', sideKey, miscText('foul', { p: p.name }));
+        if (rand() < 0.3) push(out, minute, 'yellow', sideKey, miscText('yellow', { p: nm(p) }, lang));
+        else push(out, minute, 'foul', sideKey, miscText('foul', { p: nm(p) }, lang));
       } else if (r < 0.072) {
-        push(out, minute, 'pressure', sideKey, miscText('pressure', { t: sd.team.name }));
+        push(out, minute, 'pressure', sideKey, miscText('pressure', { t: tnm(sd.team) }, lang));
       }
     }
     // AI 측 자동 교체
@@ -207,36 +211,36 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     sd.subsUsed++;
     recalcStrength(sd);
     push(out, minute, 'sub', sd === home ? 'home' : 'away',
-      miscText('sub', { t: sd.team.name, out: outP.name, in: inP.name }));
+      miscText('sub', { t: tnm(sd.team), out: nm(outP), in: nm(inP) }, lang));
   };
 
   // 한 분 진행. 이번 호출에서 생성된 이벤트 배열 반환.
   m.advance = () => {
     if (m.finished) return [];
     const out = [];
-    if (m.minute === 0) push(out, 0, 'info', null, miscText('kickoff'));
+    if (m.minute === 0) push(out, 0, 'info', null, miscText('kickoff', {}, lang));
     m.minute++;
-    if (m.minute === 46) push(out, 46, 'info', null, miscText('secondHalf'));
+    if (m.minute === 46) push(out, 46, 'info', null, miscText('secondHalf', {}, lang));
     simMinute(m.minute, out);
 
-    if (m.minute === 45) push(out, 45, 'info', null, miscText('halftime'));
+    if (m.minute === 45) push(out, 45, 'info', null, miscText('halftime', {}, lang));
     if (m.minute === 90) {
       if (!m.knockout || m.hg !== m.ag) {
-        push(out, 90, 'end', null, miscText('fulltime'));
+        push(out, 90, 'end', null, miscText('fulltime', {}, lang));
         m.finished = true;
       } else {
         m.extraTime = true;
-        push(out, 90, 'info', null, miscText('extraStart'));
+        push(out, 90, 'info', null, miscText('extraStart', {}, lang));
       }
     }
-    if (m.minute === 105 && m.extraTime) push(out, 105, 'info', null, miscText('extraHalf'));
+    if (m.minute === 105 && m.extraTime) push(out, 105, 'info', null, miscText('extraHalf', {}, lang));
     if (m.minute === 120) {
       if (m.hg === m.ag) {
-        push(out, 120, 'info', null, miscText('penaltiesStart'));
-        m.shootout = simulateShootout(home, away);
+        push(out, 120, 'info', null, miscText('penaltiesStart', {}, lang));
+        m.shootout = simulateShootout(home, away, lang);
         for (const line of m.shootout.log) push(out, 120, 'shootout', null, line);
       }
-      push(out, 120, 'end', null, miscText('fulltime'));
+      push(out, 120, 'end', null, miscText('fulltime', {}, lang));
       m.finished = true;
     }
     return out;
@@ -292,7 +296,7 @@ export function simulateMatch(homeTeam, awayTeam, opts = {}) {
 }
 
 // ── 승부차기: 키커의 슈팅 능력치 기반 성공 확률 ──────────────────
-function simulateShootout(home, away) {
+function simulateShootout(home, away, lang = 'ko') {
   const kickers = (sd) =>
     sd.eleven.filter((p) => p.position !== 'GK').sort((a, b) => b.shooting - a.shooting);
   const hk = kickers(home);
@@ -309,7 +313,7 @@ function simulateShootout(home, away) {
   const doKick = (sd, kicker, oppGk) => {
     const ok = kick(kicker, oppGk);
     if (sd === home) { if (ok) hs++; } else if (ok) as++;
-    log.push(`${sd.team.name} ${kicker.name} ${ok ? '성공! ⚽' : '실축… ❌'} (${hs}-${as})`);
+    log.push(shootoutLine(teamName(sd.team, lang), playerName(kicker, lang), ok, hs, as, lang));
   };
 
   let settled = false;

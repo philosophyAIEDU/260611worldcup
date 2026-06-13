@@ -42,6 +42,6 @@ export async function askCoach(apiKey, systemContext, history) {
 
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('');
-  if (!text) throw new Error('AI 응답이 비어 있습니다.');
+  if (!text) throw new Error('Empty AI response');
   return text;
 }
