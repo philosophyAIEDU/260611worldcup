@@ -166,7 +166,7 @@ export const AFRICA = [
     P('카라바', 'Kahraba', 'FW', 63, 72, 64, 60, 32, 66, '알아흘리'),
   ]),
 
-  T('CIV', '아이보리코스트', 'Ivory Coast', '🇨🇮', 'CAF', 49, 70, [
+  T('CIV', '코트디부아르', "Côte d'Ivoire", '🇨🇮', 'CAF', 49, 70, [
     // GK
     P('야히아 포파나', 'Yahia Fofana', 'GK', 71, 50, 22, 58, 72, 74, '앙제'),
     P('바드라 알리 상가레', 'Badra Ali Sangare', 'GK', 64, 46, 20, 52, 66, 66, '세쿠쿠네 유나이티드'),
