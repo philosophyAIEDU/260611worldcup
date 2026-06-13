@@ -214,6 +214,49 @@ const STRINGS = {
   'coach.ask': { ko: '코치에게 질문하기…', en: 'Ask the coach…' },
   'coach.send': { ko: '전송', en: 'Send' },
   'coach.error': { ko: ({ m }) => `코치 연결 실패: ${m}`, en: ({ m }) => `Coach connection failed: ${m}` },
+  // AI 수석코치 빠른 질문
+  'coach.q.scout': { ko: '📊 상대 분석 리포트', en: '📊 Scout the opponent' },
+  'coach.q.predict': { ko: '🔮 스코어 예측', en: '🔮 Predict the score' },
+  'coach.q.plan': { ko: '🧩 추천 전술', en: '🧩 Suggest a game plan' },
+  'coach.p.scout': {
+    ko: 'Give me a short scouting report on our opponent: their main threats and one weakness we can exploit.',
+    en: 'Give me a short scouting report on our opponent: their main threats and one weakness we can exploit.',
+  },
+  'coach.p.predict': {
+    ko: 'Predict a likely scoreline for this match and explain briefly why.',
+    en: 'Predict a likely scoreline for this match and explain briefly why.',
+  },
+  'coach.p.plan': {
+    ko: 'Suggest the best formation and mentality for this match, with a one-line reason for each.',
+    en: 'Suggest the best formation and mentality for this match, with a one-line reason for each.',
+  },
+
+  // 선수와 대화 (Gemini 페르소나)
+  'player.title': { ko: '💬 선수와 대화', en: '💬 Talk to player' },
+  'player.intro': {
+    ko: '이 선수에게 오늘 컨디션이나 각오를 물어보세요. 선수가 직접 1인칭으로 답합니다.',
+    en: 'Ask this player how they feel today or about their mindset — they answer in person.',
+  },
+  'player.ask': { ko: '선수에게 말 걸기…', en: 'Talk to the player…' },
+  'player.thinking': { ko: '(선수가 생각하는 중…)', en: '(the player is thinking…)' },
+  'player.cond': { ko: ({ n }) => `오늘 컨디션 ${n}%`, en: ({ n }) => `Today's condition ${n}%` },
+  'player.close': { ko: '닫기 ✕', en: 'Close ✕' },
+  'player.talkTitle': { ko: '선수와 대화하기', en: 'Talk to this player' },
+  'player.q.cond': { ko: '오늘 컨디션 어때요?', en: 'How do you feel today?' },
+  'player.q.mind': { ko: '이 경기 각오는?', en: 'Mindset for this match?' },
+  'player.q.ready': { ko: '선발 준비 됐나요?', en: 'Ready to start?' },
+  'player.p.cond': {
+    ko: '오늘 몸 상태가 어때요? 컨디션을 솔직하게 말해줘요.',
+    en: 'How is your body feeling today? Tell me honestly about your condition.',
+  },
+  'player.p.mind': {
+    ko: '이번 경기에 대한 각오 한마디 해줘요.',
+    en: "What's your mindset going into this match?",
+  },
+  'player.p.ready': {
+    ko: '선발로 뛸 준비가 됐나요?',
+    en: 'Are you ready to start this match?',
+  },
 
   // 영어 학습 코치 (Gemini)
   'learn.title': { ko: '📚 AI 영어 코치', en: '📚 AI English Coach' },

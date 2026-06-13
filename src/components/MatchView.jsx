@@ -1,15 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
-import { MENTALITIES, MAX_SUBS } from '../engine/matchEngine.js';
-import { mentalityLabel } from '../engine/labels.js';
+import { FORMATIONS, MENTALITIES, MAX_SUBS } from '../engine/matchEngine.js';
+import { formationLabel, mentalityLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
+import PlayerChat from './PlayerChat.jsx';
 
 function condClass(c) {
   if (c >= 0.9) return 'cond-hot';
   if (c >= 0.8) return 'cond-ok';
   return 'cond-low';
+}
+
+// 분 → 쿼터 (1-23 Q1, 24-45 Q2, 46-68 Q3, 69-90 Q4)
+function quarterOf(minute) {
+  if (minute <= 23) return 1;
+  if (minute <= 45) return 2;
+  if (minute <= 68) return 3;
+  return 4;
 }
 
 // 실시간 경기 화면. match: createMatch()가 반환한 라이브 경기 객체.
@@ -20,6 +29,7 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const [paused, setPaused] = useState(false);
   const [benchOpen, setBenchOpen] = useState(false);
   const [pickedOut, setPickedOut] = useState(null);
+  const [chatPlayer, setChatPlayer] = useState(null);
   const matchRef = useRef(match);
 
   const m = matchRef.current;
@@ -77,7 +87,9 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
 
   const clockText = done
     ? result.upset ? t('match.endUpset') : t('match.end')
-    : m.minute > 90 ? t('match.extra', { n: m.minute }) : `${m.minute}'`;
+    : m.minute > 90
+      ? t('match.extra', { n: m.minute })
+      : `Q${quarterOf(m.minute)} · ${m.minute}'`;
 
   return (
     <div>
@@ -133,6 +145,19 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           </div>
 
           <div className="tactic-row">
+            <span className="tactic-title">{t('lineup.formation')}</span>
+            {Object.keys(FORMATIONS).map((f) => (
+              <button
+                key={f}
+                className={`chip ${mine.formation === f ? 'active' : ''}`}
+                title={formationLabel(f, lang)}
+                onClick={() => { m.setFormation(mySide, f); force((x) => x + 1); }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className="tactic-row">
             <span className="tactic-title">{t('lineup.mentality')}</span>
             {Object.keys(MENTALITIES).map((k) => (
               <button
@@ -157,16 +182,18 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               <h3>{t('match.onPitch')}</h3>
               <div className="p-list">
                 {mine.eleven.map((p) => (
-                  <button
-                    key={p.name}
-                    className={`p-row ${pickedOut === p.name ? 'selected' : ''}`}
-                    onClick={() => setPickedOut(pickedOut === p.name ? null : p.name)}
-                  >
-                    <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
-                    <span className="p-name">{pn(p)}{p.isStar && <span className="star"> ★</span>}</span>
-                    <span className="p-ovr">{p.overall}</span>
-                    <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>
-                  </button>
+                  <div className="p-row-wrap" key={p.name}>
+                    <button
+                      className={`p-row ${pickedOut === p.name ? 'selected' : ''}`}
+                      onClick={() => setPickedOut(pickedOut === p.name ? null : p.name)}
+                    >
+                      <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
+                      <span className="p-name">{pn(p)}{p.isStar && <span className="star"> ★</span>}</span>
+                      <span className="p-ovr">{p.overall}</span>
+                      <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>
+                    </button>
+                    <button className="p-chat-btn" title={t('player.talkTitle')} onClick={() => setChatPlayer(p)}>💬</button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -177,17 +204,19 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
                   const pickedP = pickedOut ? mine.eleven.find((x) => x.name === pickedOut) : null;
                   const dimmed = mine.subsUsed >= MAX_SUBS || (pickedP && p.position !== pickedP.position);
                   return (
-                    <button
-                      key={p.name}
-                      className={`p-row ${dimmed ? 'dimmed' : ''}`}
-                      disabled={dimmed}
-                      onClick={() => doSub(p.name)}
-                    >
-                      <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
-                      <span className="p-name">{pn(p)}{p.isStar && <span className="star"> ★</span>}</span>
-                      <span className="p-ovr">{p.overall}</span>
-                      <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>
-                    </button>
+                    <div className={`p-row-wrap ${dimmed ? 'dimmed' : ''}`} key={p.name}>
+                      <button
+                        className="p-row"
+                        disabled={dimmed}
+                        onClick={() => doSub(p.name)}
+                      >
+                        <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
+                        <span className="p-name">{pn(p)}{p.isStar && <span className="star"> ★</span>}</span>
+                        <span className="p-ovr">{p.overall}</span>
+                        <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>
+                      </button>
+                      <button className="p-chat-btn" title={t('player.talkTitle')} onClick={() => setChatPlayer(p)}>💬</button>
+                    </div>
                   );
                 })}
               </div>
@@ -195,9 +224,25 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           </div>
 
           <div style={{ marginTop: 14 }}>
-            <CoachChat context={coachContext} />
+            <CoachChat
+              context={coachContext}
+              quickPrompts={[
+                { label: t('coach.q.plan'), prompt: t('coach.p.plan') },
+                { label: t('coach.q.scout'), prompt: t('coach.p.scout') },
+              ]}
+            />
           </div>
         </div>
+      )}
+
+      {chatPlayer && mine && (
+        <PlayerChat
+          player={chatPlayer}
+          team={mine.team}
+          opp={mySide === 'home' ? away : home}
+          label={roundLabel}
+          onClose={() => setChatPlayer(null)}
+        />
       )}
     </div>
   );

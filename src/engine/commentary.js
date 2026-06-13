@@ -179,9 +179,13 @@ export function goalText(type, scorerName, assisterName, lang = 'ko') {
 
 const MISC = {
   ko: {
-    kickoff: ['경기 시작 휘슬이 울립니다!', '드디어 킥오프! 양 팀 선수들이 움직이기 시작합니다.'],
-    halftime: ['전반 종료. 양 팀 라커룸으로 향합니다.'],
-    secondHalf: ['후반전이 시작됩니다!'],
+    kickoff: ['1쿼터 시작 휘슬이 울립니다!', '드디어 킥오프! 1쿼터가 시작됩니다.'],
+    q1End: ['1쿼터 종료. 짧은 인터벌입니다.'],
+    q2Start: ['2쿼터가 시작됩니다!'],
+    q2End: ['2쿼터 종료. 하프타임 — 양 팀 라커룸으로 향합니다.'],
+    q3Start: ['후반 첫 쿼터, 3쿼터가 시작됩니다!'],
+    q3End: ['3쿼터 종료. 마지막 쿼터를 준비합니다.'],
+    q4Start: ['운명의 4쿼터가 시작됩니다!'],
     fulltime: ['경기 종료 휘슬!'],
     extraStart: ['승부를 가리지 못해 연장전에 돌입합니다!'],
     extraHalf: ['연장 전반 종료.'],
@@ -212,9 +216,13 @@ const MISC = {
     ],
   },
   en: {
-    kickoff: ['The whistle blows — we are underway!', 'Kick off! Both teams spring into action.'],
-    halftime: ['Half time. The teams head for the dressing rooms.'],
-    secondHalf: ['The second half is under way!'],
+    kickoff: ['The first-quarter whistle blows — we are underway!', 'Kick off! Quarter one begins.'],
+    q1End: ['End of the first quarter. A short break.'],
+    q2Start: ['The second quarter is under way!'],
+    q2End: ['End of the second quarter — half time. The teams head for the dressing rooms.'],
+    q3Start: ['The third quarter begins!'],
+    q3End: ['End of the third quarter. One quarter to go.'],
+    q4Start: ['The decisive fourth quarter is under way!'],
     fulltime: ['The full-time whistle!'],
     extraStart: ['Still level — we go to extra time!'],
     extraHalf: ['End of the first period of extra time.'],

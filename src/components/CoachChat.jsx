@@ -6,7 +6,7 @@ import { useLang } from '../i18n.jsx';
 //   variant='coach' → AI 수석코치(전술 상담)
 //   variant='learn' → AI 영어 코치(영어 학습)
 // context: Gemini systemInstruction 문자열. quickPrompts: [{label, prompt}].
-export default function CoachChat({ context, variant = 'coach', quickPrompts = [] }) {
+export default function CoachChat({ context, variant = 'coach', quickPrompts = [], title }) {
   const { t } = useLang();
   const [apiKey, setKey] = useState(getApiKey());
   const [keyInput, setKeyInput] = useState('');
@@ -17,10 +17,11 @@ export default function CoachChat({ context, variant = 'coach', quickPrompts = [
   const listRef = useRef(null);
 
   const isLearn = variant === 'learn';
-  const titleKey = isLearn ? 'learn.title' : 'coach.title';
-  const emptyKey = isLearn ? 'learn.intro' : 'coach.empty';
-  const askKey = isLearn ? 'learn.ask' : 'coach.ask';
-  const thinkingKey = isLearn ? 'learn.thinking' : 'coach.thinking';
+  const isPlayer = variant === 'player';
+  const titleKey = isLearn ? 'learn.title' : isPlayer ? 'player.title' : 'coach.title';
+  const emptyKey = isLearn ? 'learn.intro' : isPlayer ? 'player.intro' : 'coach.empty';
+  const askKey = isLearn ? 'learn.ask' : isPlayer ? 'player.ask' : 'coach.ask';
+  const thinkingKey = isLearn ? 'learn.thinking' : isPlayer ? 'player.thinking' : 'coach.thinking';
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -61,9 +62,9 @@ export default function CoachChat({ context, variant = 'coach', quickPrompts = [
   };
 
   return (
-    <div className={`coach ${isLearn ? 'coach-learn' : ''}`}>
+    <div className={`coach ${isLearn ? 'coach-learn' : ''} ${isPlayer ? 'coach-player' : ''}`}>
       <div className="coach-head">
-        <span>{t(titleKey)}</span>
+        <span>{title || t(titleKey)}</span>
         {apiKey && (
           <button className="link-btn" onClick={resetKey}>{t('coach.changeKey')}</button>
         )}

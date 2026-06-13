@@ -220,10 +220,15 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     const out = [];
     if (m.minute === 0) push(out, 0, 'info', null, miscText('kickoff', {}, lang));
     m.minute++;
-    if (m.minute === 46) push(out, 46, 'info', null, miscText('secondHalf', {}, lang));
+    // 4쿼터 진행: Q1 1-23, Q2 24-45(하프타임), Q3 46-68, Q4 69-90
+    if (m.minute === 24) push(out, 24, 'info', null, miscText('q2Start', {}, lang));
+    if (m.minute === 46) push(out, 46, 'info', null, miscText('q3Start', {}, lang));
+    if (m.minute === 69) push(out, 69, 'info', null, miscText('q4Start', {}, lang));
     simMinute(m.minute, out);
 
-    if (m.minute === 45) push(out, 45, 'info', null, miscText('halftime', {}, lang));
+    if (m.minute === 23) push(out, 23, 'info', null, miscText('q1End', {}, lang));
+    if (m.minute === 45) push(out, 45, 'info', null, miscText('q2End', {}, lang));
+    if (m.minute === 68) push(out, 68, 'info', null, miscText('q3End', {}, lang));
     if (m.minute === 90) {
       if (!m.knockout || m.hg !== m.ag) {
         push(out, 90, 'end', null, miscText('fulltime', {}, lang));
@@ -261,6 +266,15 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
   m.setMentality = (sideKey, mentality) => {
     const sd = sideKey === 'home' ? home : away;
     if (MENTALITIES[mentality]) sd.mentality = mentality;
+  };
+
+  // 경기 중 포메이션(전술 형태) 변경 — 같은 11명으로 공/수 균형만 바뀐다.
+  m.setFormation = (sideKey, formation) => {
+    const sd = sideKey === 'home' ? home : away;
+    if (FORMATIONS[formation]) {
+      sd.formation = formation;
+      recalcStrength(sd);
+    }
   };
 
   m.result = () => {

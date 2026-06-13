@@ -5,6 +5,7 @@ import { formationLabel, mentalityLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
+import PlayerChat from './PlayerChat.jsx';
 
 const POS_ORDER = { GK: 0, DF: 1, MF: 2, FW: 3 };
 
@@ -14,22 +15,25 @@ function condClass(c) {
   return 'cond-low';
 }
 
-function PlayerRow({ p, name, selected, dimmed, onClick }) {
+function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle }) {
   return (
-    <button
-      className={`p-row ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''}`}
-      onClick={onClick}
-      disabled={dimmed}
-    >
-      <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
-      <span className="p-name">
-        {name}
-        {p.isStar && <span className="star"> ★</span>}
-        {p.isLegend && ' 👑'}
-      </span>
-      <span className="p-ovr">{p.overall}</span>
-      <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>
-    </button>
+    <div className={`p-row-wrap ${dimmed ? 'dimmed' : ''}`}>
+      <button
+        className={`p-row ${selected ? 'selected' : ''}`}
+        onClick={onClick}
+        disabled={dimmed}
+      >
+        <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
+        <span className="p-name">
+          {name}
+          {p.isStar && <span className="star"> ★</span>}
+          {p.isLegend && ' 👑'}
+        </span>
+        <span className="p-ovr">{p.overall}</span>
+        <span className={`p-cond ${condClass(p.condition)}`}>{Math.round(p.condition * 100)}%</span>
+      </button>
+      <button className="p-chat-btn" title={talkTitle} onClick={onChat}>💬</button>
+    </div>
   );
 }
 
@@ -52,6 +56,7 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
   const [mentality, setMentality] = useState('balanced');
   const [lineup, setLineup] = useState(() => autoLineup(squad, '4-3-3'));
   const [picked, setPicked] = useState(null); // 교체 대상으로 선택된 선발 선수 이름
+  const [chatPlayer, setChatPlayer] = useState(null); // 대화 중인 선수
 
   const starters = lineup.map((n) => squad.find((p) => p.name === n));
   const bench = squad.filter((p) => !lineup.includes(p.name));
@@ -93,6 +98,12 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
         : `[게임 규칙] 성향: 공격적=득점↑실점↑, 수비적=득점↓실점↓. 선수 컨디션은 매 경기 70~100%로 변하며, 랭킹 차 20위 이상일 때 약팀 스타가 90% 이상 컨디션이면 업셋 확률이 크게 오른다. 교체는 경기당 5명.`,
     ].join('\n');
   }, [starters, bench, formation, mentality, myTeam, oppTeam, label, knockout, lang]);
+
+  const coachQuickPrompts = [
+    { label: t('coach.q.scout'), prompt: t('coach.p.scout') },
+    { label: t('coach.q.predict'), prompt: t('coach.p.predict') },
+    { label: t('coach.q.plan'), prompt: t('coach.p.plan') },
+  ];
 
   return (
     <div>
@@ -146,6 +157,8 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
                 p={p}
                 name={pn(p)}
                 selected={picked === p.name}
+                talkTitle={t('player.talkTitle')}
+                onChat={() => setChatPlayer(p)}
                 onClick={() => setPicked(picked === p.name ? null : p.name)}
               />
             ))}
@@ -160,6 +173,8 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
                 p={p}
                 name={pn(p)}
                 dimmed={!!pickedPlayer && p.position !== pickedPlayer.position}
+                talkTitle={t('player.talkTitle')}
+                onChat={() => setChatPlayer(p)}
                 onClick={() => swapIn(p)}
               />
             ))}
@@ -168,7 +183,7 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
       </div>
 
       <div className="panel">
-        <CoachChat context={coachContext} />
+        <CoachChat context={coachContext} quickPrompts={coachQuickPrompts} />
       </div>
 
       <div className="match-actions">
@@ -177,6 +192,16 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
           {t('lineup.kickoff')}
         </button>
       </div>
+
+      {chatPlayer && (
+        <PlayerChat
+          player={chatPlayer}
+          team={myTeam}
+          opp={oppTeam}
+          label={label}
+          onClose={() => setChatPlayer(null)}
+        />
+      )}
     </div>
   );
 }
