@@ -41,3 +41,13 @@ export function mentalityLabel(key, lang = 'ko') {
 export function playstyleLabel(key, lang = 'ko') {
   return PLAYSTYLE_LABELS[key]?.[lang] ?? key;
 }
+
+// 포지션 표시 라벨. FW는 선발 명단 내 순서로 LFW/CFW/RFW로 세분화한다.
+// starters: 선발 11명 배열(lineup 순서 유지), player: 해당 선수 객체.
+const FW_LABELS = { 1: ['CFW'], 2: ['LFW', 'RFW'], 3: ['LFW', 'CFW', 'RFW'] };
+export function posLabel(player, starters) {
+  if (player.position !== 'FW') return player.position;
+  const fws = starters.filter((p) => p.position === 'FW');
+  const idx = fws.findIndex((p) => p === player || p.name === player.name);
+  return FW_LABELS[fws.length]?.[idx] ?? (fws.length > 3 ? 'FW' : 'FW');
+}

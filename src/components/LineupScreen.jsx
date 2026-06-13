@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
 import { FORMATIONS, MENTALITIES, PLAYSTYLES, autoLineup, defaultPlaystyle } from '../engine/matchEngine.js';
-import { formationLabel, mentalityLabel, playstyleLabel } from '../engine/labels.js';
+import { formationLabel, mentalityLabel, playstyleLabel, posLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
@@ -15,7 +15,7 @@ function condClass(c) {
   return 'cond-low';
 }
 
-function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle }) {
+function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle, starters }) {
   return (
     <div className={`p-row-wrap ${dimmed ? 'dimmed' : ''}`}>
       <button
@@ -23,7 +23,7 @@ function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle }) {
         onClick={onClick}
         disabled={dimmed}
       >
-        <span className={`pos-chip pos-${p.position}`}>{p.position}</span>
+        <span className={`pos-chip pos-${p.position}`}>{starters ? posLabel(p, starters) : p.position}</span>
         <span className="p-name">
           {name}
           {p.isStar && <span className="star"> ★</span>}
@@ -170,6 +170,7 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
                 p={p}
                 name={pn(p)}
                 selected={picked === p.name}
+                starters={starters}
                 talkTitle={t('player.talkTitle')}
                 onChat={() => setChatPlayer(p)}
                 onClick={() => setPicked(picked === p.name ? null : p.name)}
