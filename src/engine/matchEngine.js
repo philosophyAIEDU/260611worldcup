@@ -29,7 +29,13 @@ export const FORMATIONS = {
   '4-1-4-1': { DF: 4, MF: 5, FW: 1, atk: 0.93, def: 0.88, label: '4-1-4-1 (안정적 중원)' },
   '3-4-3': { DF: 3, MF: 4, FW: 3, atk: 1.12, def: 1.1, label: '3-4-3 (전면 공격)' },
   '3-5-2': { DF: 3, MF: 5, FW: 2, atk: 1.08, def: 1.08, label: '3-5-2 (하이리스크 공격)' },
+  '4-2-4': { DF: 4, MF: 2, FW: 4, atk: 1.16, def: 1.15, label: '4-2-4 (초공격)' },
+  '3-3-4': { DF: 3, MF: 3, FW: 4, atk: 1.2, def: 1.22, label: '3-3-4 (올아웃 공격)' },
+  '4-3-2-1': { DF: 4, MF: 5, FW: 1, atk: 0.98, def: 0.9, label: '4-3-2-1 (크리스마스 트리)' },
+  '3-6-1': { DF: 3, MF: 6, FW: 1, atk: 0.97, def: 0.92, label: '3-6-1 (중원 과부하)' },
   '5-3-2': { DF: 5, MF: 3, FW: 2, atk: 0.9, def: 0.87, label: '5-3-2 (선수비 역습)' },
+  '5-2-3': { DF: 5, MF: 2, FW: 3, atk: 0.96, def: 0.84, label: '5-2-3 (수비형 역습)' },
+  '4-5-1': { DF: 4, MF: 5, FW: 1, atk: 0.88, def: 0.85, label: '4-5-1 (수비형 중원)' },
   '5-4-1': { DF: 5, MF: 4, FW: 1, atk: 0.82, def: 0.8, label: '5-4-1 (초수비/잠그기)' },
 };
 
@@ -52,6 +58,10 @@ export const PLAYSTYLES = {
   longball: { atk: 1.04, def: 1.0, bias: { header: 2.2, corner: 1.8, rebound: 1.6, longshot: 1.2 } }, // 롱볼/롱스로인
   wing: { atk: 1.06, def: 1.0, bias: { header: 1.8, corner: 1.5, combo: 1.3 } }, // 측면 돌파/크로스
   catenaccio: { atk: 0.86, def: 0.82, bias: { counter: 2.0, longshot: 1.2 } }, // 빗장수비
+  gegenpress: { atk: 1.11, def: 1.0, bias: { counter: 1.8, rebound: 1.7, combo: 1.3 } }, // 게겐프레싱(즉시 압박)
+  direct: { atk: 1.08, def: 1.0, bias: { counter: 1.6, longshot: 1.4, solo: 1.3 } }, // 다이렉트(수직 빠른 전개)
+  falsenine: { atk: 1.07, def: 0.95, bias: { combo: 1.9, solo: 1.5, longshot: 1.3 } }, // 제로톱(가짜 9번)
+  parkbus: { atk: 0.78, def: 0.72, bias: { counter: 1.5, freekick: 1.3, penalty: 1.2 } }, // 텐백(버스 세우기)
   // 파상공세: 기본도 공격적, Q4(69분~) 이후 추가 보정(goalProb에서 처리)
   allout: { atk: 1.25, def: 1.32, bias: { combo: 1.6, header: 1.5, corner: 1.4, longshot: 1.2, counter: 0.4 } }, // 파상공세
 };
@@ -98,7 +108,7 @@ export function autoLineup(squad, formation) {
 function buildSide(team, setup = {}) {
   const conditions = setup.conditions || rollConditions(team);
   const squad = team.players.map((p) => ({ ...p, condition: conditions[p.name] ?? 0.85 }));
-  const formation = setup.formation || pick(['4-3-3', '4-4-2', '4-2-3-1']);
+  const formation = setup.formation || pick(['4-3-3', '4-4-2', '4-2-3-1', '4-2-3-1', '3-5-2', '4-1-4-1', '3-4-3']);
   const lineupNames = setup.lineup || autoLineup(squad, formation);
   const eleven = lineupNames.map((n) => squad.find((p) => p.name === n)).filter(Boolean);
   const bench = squad.filter((p) => !eleven.includes(p));

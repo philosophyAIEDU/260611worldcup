@@ -7,7 +7,13 @@ const FORMATION_LABELS = {
   '4-1-4-1': { ko: '4-1-4-1 (안정적 중원)', en: '4-1-4-1 (solid midfield)' },
   '3-4-3': { ko: '3-4-3 (전면 공격)', en: '3-4-3 (all-out attack)' },
   '3-5-2': { ko: '3-5-2 (하이리스크 공격)', en: '3-5-2 (high-risk attack)' },
+  '4-2-4': { ko: '4-2-4 (초공격)', en: '4-2-4 (ultra-attack)' },
+  '3-3-4': { ko: '3-3-4 (올아웃 공격)', en: '3-3-4 (overload front)' },
+  '4-3-2-1': { ko: '4-3-2-1 (크리스마스 트리)', en: '4-3-2-1 (Christmas tree)' },
+  '3-6-1': { ko: '3-6-1 (중원 과부하)', en: '3-6-1 (midfield overload)' },
   '5-3-2': { ko: '5-3-2 (선수비 역습)', en: '5-3-2 (defend & counter)' },
+  '5-2-3': { ko: '5-2-3 (수비형 역습)', en: '5-2-3 (defensive counter)' },
+  '4-5-1': { ko: '4-5-1 (수비형 중원)', en: '4-5-1 (defensive midfield)' },
   '5-4-1': { ko: '5-4-1 (초수비/잠그기)', en: '5-4-1 (park the bus)' },
 };
 
@@ -27,6 +33,10 @@ const PLAYSTYLE_LABELS = {
   longball: { ko: '롱볼/롱스로인', en: 'Long Ball' },
   wing: { ko: '측면 돌파', en: 'Wing Play' },
   catenaccio: { ko: '빗장수비', en: 'Catenaccio' },
+  gegenpress: { ko: '게겐프레싱', en: 'Gegenpressing' },
+  direct: { ko: '다이렉트 플레이', en: 'Direct Play' },
+  falsenine: { ko: '제로톱', en: 'False Nine' },
+  parkbus: { ko: '텐백 수비', en: 'Park the Bus' },
   allout: { ko: '막판 파상공세', en: 'All-Out Attack (late)' },
 };
 
