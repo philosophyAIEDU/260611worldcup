@@ -80,7 +80,7 @@ export const ASIA_OCEANIA = [
     P('손흥민', 'Son Heung-min', 'FW', 88, 87, 88, 82, 42, 80, 'LAFC', { star: true, legend: true }),
     P('황희찬', 'Hwang Hee-chan', 'FW', 80, 84, 78, 70, 44, 80, '울버햄프턴 원더러스'),
     P('조규성', 'Cho Gue-sung', 'FW', 75, 74, 76, 62, 40, 76, '미트윌란'),
-    P('오현규', 'Oh Hyeon-gyu', 'FW', 75, 80, 74, 60, 38, 78, '헹크'),
+    P('오현규', 'Oh Hyeon-gyu', 'FW', 75, 80, 74, 60, 38, 78, '베식타스'),
     P('배준호', 'Bae Jun-ho', 'FW', 74, 80, 68, 70, 36, 75, '스토크 시티'),
     P('양현준', 'Yang Hyeon-jun', 'FW', 72, 82, 66, 66, 34, 74, '셀틱'),
     P('엄지성', 'Eom Ji-sung', 'FW', 71, 81, 64, 64, 38, 76, '스완지 시티'),
