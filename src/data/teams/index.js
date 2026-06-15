@@ -1,12 +1,11 @@
-import { UEFA_TOP } from './uefaTop.js';
-import { UEFA_REST } from './uefaRest.js';
-import { AMERICAS } from './americas.js';
-import { AFRICA } from './africa.js';
-import { ASIA_OCEANIA } from './asiaOceania.js';
+import { NATIONS, NATION_LIST } from './nations.js';
+import { CLUBS, CLUB_LIST } from '../clubs/index.js';
 
-const ALL = [...UEFA_TOP, ...UEFA_REST, ...AMERICAS, ...AFRICA, ...ASIA_OCEANIA];
+// 팀 코드 → 팀 객체 (국가대표 + 클럽 통합).
+// 코드가 고유하므로 TEAMS[code]로 어느 대회의 팀이든 조회할 수 있다.
+export const TEAMS = { ...NATIONS, ...CLUBS };
 
-// 팀 코드 → 팀 객체
-export const TEAMS = Object.fromEntries(ALL.map((t) => [t.code, t]));
+// 월드컵 국가대표 목록 (기존 호환 유지)
+export const TEAM_LIST = NATION_LIST;
 
-export const TEAM_LIST = ALL;
+export { NATION_LIST, CLUB_LIST };

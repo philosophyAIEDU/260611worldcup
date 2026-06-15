@@ -5,7 +5,7 @@ import Flag from './Flag.jsx';
 
 const POS_ORDER = { GK: 0, DF: 1, MF: 2, FW: 3 };
 
-export default function SquadView({ teamCode, onConfirm, onBack }) {
+export default function SquadView({ teamCode, onConfirm, onBack, rankKey = 'common.fifaRank', confirmKey = 'squad.confirm' }) {
   const { t, tn, pn, cn } = useLang();
   const team = TEAMS[teamCode];
   const players = [...team.players].sort(
@@ -16,7 +16,7 @@ export default function SquadView({ teamCode, onConfirm, onBack }) {
     <div>
       <h2>
         <Flag code={team.code} size={26} /> {t('squad.title', { team: tn(team) })}
-        <span className="badge">{t('common.fifaRank', { n: team.ranking })}</span>
+        <span className="badge">{t(rankKey, { n: team.ranking })}</span>
         <span className="badge">{t('squad.teamRating', { n: team.rating })}</span>
       </h2>
       <div className="panel" style={{ marginTop: 14 }}>
@@ -54,7 +54,7 @@ export default function SquadView({ teamCode, onConfirm, onBack }) {
       </div>
       <div className="match-actions">
         <button className="btn ghost" onClick={onBack}>{t('squad.other')}</button>
-        <button className="btn big" onClick={onConfirm}>{t('squad.confirm')}</button>
+        <button className="btn big" onClick={onConfirm}>{t(confirmKey)}</button>
       </div>
     </div>
   );
