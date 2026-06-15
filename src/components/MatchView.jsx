@@ -84,8 +84,9 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
       const QUARTER_MINS = { 1: 23, 2: 45, 3: 68, 4: 90 };
       for (const [q, endMin] of Object.entries(QUARTER_PAUSE_MINS)) {
         if (m.minute === endMin && !quartersFired.current.has(q)) {
-          // 쿼터 종료 자동 일시정지
+          // 쿼터 종료 자동 일시정지 + 작전 패널 자동 오픈
           setQuarterPause({ q: Number(q), endMin });
+          if (mine) setBenchOpen(true);
           // AI 분석 (API 키 있을 때)
           if (mine) {
             const key = getApiKey();
@@ -389,16 +390,6 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           ))}
         </div>
 
-        {quarterPause && !done && (
-          <div className="quarter-break-banner">
-            <span className="quarter-break-label">
-              ⏸ {lang === 'en' ? `Q${quarterPause.q} ended (${quarterPause.endMin}')` : `${quarterPause.q}쿼터 종료 (${quarterPause.endMin}분)`}
-            </span>
-            <button className="btn big" onClick={() => setQuarterPause(null)}>
-              {lang === 'en' ? `▶ Start Q${quarterPause.q + 1}` : `▶ ${quarterPause.q + 1}쿼터 시작`}
-            </button>
-          </div>
-        )}
 
         <div className="match-actions">
           <button
@@ -491,10 +482,15 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
       {benchOpen && mine && (
         <div className="panel bench-panel">
           <div className="coach-head">
-            <span>{t('match.opsTitle', { n: m.minute })}</span>
-            <button className="link-btn" onClick={() => { setBenchOpen(false); setPickedOut(null); }}>
-              {t('match.close')}
-            </button>
+            {quarterPause
+              ? <span className="quarter-break-label">⏸ {lang === 'en' ? `Q${quarterPause.q} Break — Adjust tactics before Q${quarterPause.q + 1}` : `${quarterPause.q}쿼터 브레이크 — ${quarterPause.q + 1}쿼터 전 전술 조정`}</span>
+              : <span>{t('match.opsTitle', { n: m.minute })}</span>
+            }
+            {!quarterPause && (
+              <button className="link-btn" onClick={() => { setBenchOpen(false); setPickedOut(null); }}>
+                {t('match.close')}
+              </button>
+            )}
           </div>
 
           <div className="tactic-row">
@@ -597,6 +593,17 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               ]}
             />
           </div>
+
+          {quarterPause && (
+            <div className="quarter-resume-wrap">
+              <button
+                className="btn big"
+                onClick={() => { setQuarterPause(null); setBenchOpen(false); setPickedOut(null); }}
+              >
+                {lang === 'en' ? `▶ Start Q${quarterPause.q + 1}` : `▶ ${quarterPause.q + 1}쿼터 시작`}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
