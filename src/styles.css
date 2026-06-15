@@ -217,6 +217,7 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 .halftime-ai-title { font-weight: 800; display: block; margin-bottom: 4px; }
 .halftime-ai p { margin: 0; white-space: pre-wrap; }
 .halftime-ai .link-btn { position: absolute; top: 8px; right: 12px; font-size: 0.85rem; }
+.danger-alert { background: #fff3f3; border-color: #e05a5a; color: #7a1a1a; }
 
 /* ── 중계 피드 ───────────────────────────────── */
 .feed {

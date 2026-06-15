@@ -33,8 +33,10 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const [pickedOut, setPickedOut] = useState(null);
   const [chatPlayer, setChatPlayer] = useState(null);
   const [sfxOn, setSfx] = useState(isSfxOn());
-  const [halfTimeMsg, setHalfTimeMsg] = useState(null);
-  const halfTimeFired = useRef(false);
+  const [quarterMsg, setQuarterMsg] = useState(null); // { q, text }
+  const quartersFired = useRef(new Set());
+  const [dangerAlert, setDangerAlert] = useState(null);
+  const recentGoalsRef = useRef({ home: 0, away: 0, lastMin: 0 });
   const matchRef = useRef(match);
   const seenEvents = useRef(match.events.length);
 
@@ -66,22 +68,44 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
     const iv = setInterval(() => {
       m.advance();
       force((x) => x + 1);
-      // 하프타임 AI 분석 자동 트리거 (45분, 1회)
-      if (m.minute === 45 && !halfTimeFired.current && mine) {
+      // 쿼터 종료 AI 분석 (Q1=23', Q2=45', Q3=68', Q4=90')
+      const QUARTER_MINS = { 1: 23, 2: 45, 3: 68, 4: 90 };
+      if (mine) {
         const key = getApiKey();
         if (key) {
-          halfTimeFired.current = true;
-          const myGoals = mySide === 'home' ? m.hg : m.ag;
-          const oppGoals = mySide === 'home' ? m.ag : m.hg;
-          const opp = mySide === 'home' ? TEAMS[m.awayTeam.code] : TEAMS[m.homeTeam.code];
-          const en = lang === 'en';
-          const ctx = en
-            ? `You are a football AI coach. Half-time. Score: ${myGoals}-${oppGoals} vs ${opp.nameEn || opp.name}. Our formation: ${mine.formation}, mentality: ${mentalityLabel(mine.mentality,'en')}, subs used: ${mine.subsUsed}/${MAX_SUBS}. Give 2 sharp tactical tips for the second half in plain English, max 60 words.`
-            : `당신은 축구 AI 코치다. 전반 종료. 스코어 ${myGoals}-${oppGoals} (상대: ${opp.name}). 우리 포메이션: ${mine.formation}, 성향: ${mentalityLabel(mine.mentality,'ko')}, 교체 ${mine.subsUsed}/${MAX_SUBS} 사용. 후반 전술 조언 2가지를 간결한 한국어로, 60자 이내로.`;
-          askCoach(key, ctx, [{ role: 'user', text: en ? 'Half-time coaching advice?' : '하프타임 전술 조언?' }])
-            .then((msg) => setHalfTimeMsg(msg))
-            .catch(() => {});
+          for (const [q, endMin] of Object.entries(QUARTER_MINS)) {
+            if (m.minute === endMin && !quartersFired.current.has(q)) {
+              quartersFired.current.add(q);
+              const myGoals = mySide === 'home' ? m.hg : m.ag;
+              const oppGoals = mySide === 'home' ? m.ag : m.hg;
+              const opp = mySide === 'home' ? TEAMS[m.awayTeam.code] : TEAMS[m.homeTeam.code];
+              const en = lang === 'en';
+              const qLabel = en ? `Q${q} end (${endMin}')` : `${q}쿼터 종료 (${endMin}분)`;
+              const ctx = en
+                ? `You are a football AI coach. ${qLabel}. Score: ${myGoals}-${oppGoals} vs ${opp.nameEn || opp.name}. Formation: ${mine.formation}, mentality: ${mentalityLabel(mine.mentality,'en')}, subs used: ${mine.subsUsed}/${MAX_SUBS}. Give 2 sharp tactical tips for the next quarter in plain text, max 55 words.`
+                : `당신은 축구 AI 코치다. ${qLabel}. 스코어 ${myGoals}-${oppGoals} (상대: ${opp.name}). 포메이션: ${mine.formation}, 성향: ${mentalityLabel(mine.mentality,'ko')}, 교체 ${mine.subsUsed}/${MAX_SUBS}. 다음 쿼터 전술 조언 2가지를 간결한 한국어로.`;
+              const qNum = Number(q);
+              askCoach(key, ctx, [{ role: 'user', text: en ? `Q${q} advice?` : `${q}쿼터 조언?` }])
+                .then((msg) => setQuarterMsg({ q: qNum, text: msg }))
+                .catch(() => {});
+              break;
+            }
+          }
         }
+      }
+      // 위기 감지: 상대가 최근 10분 이내에 2골 이상 → 위기 경보
+      if (mine && !dangerAlert) {
+        const myGoals = mySide === 'home' ? m.hg : m.ag;
+        const oppGoals = mySide === 'home' ? m.ag : m.hg;
+        const prev = recentGoalsRef.current;
+        if (prev.lastMin > 0 && m.minute - prev.lastMin <= 10) {
+          const oppScored = oppGoals - (mySide === 'home' ? prev.away : prev.home);
+          if (oppScored >= 2) {
+            const en = lang === 'en';
+            setDangerAlert(en ? `⚠️ Opponent scored ${oppScored} goals in 10 minutes! Consider switching to more attacking mentality or making substitutions.` : `⚠️ 상대가 10분 내에 ${oppScored}골을 넣었습니다! 성향을 공격적으로 바꾸거나 교체를 고려하세요.`);
+          }
+        }
+        recentGoalsRef.current = { home: m.hg, away: m.ag, lastMin: m.minute };
       }
     }, speed === 1 ? 220 : 70);
     return () => clearInterval(iv);
@@ -171,11 +195,19 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           </div>
         )}
 
-        {halfTimeMsg && (
+        {quarterMsg && (
           <div className="halftime-ai">
-            <span className="halftime-ai-title">🎙️ {lang === 'en' ? 'Half-time AI Coaching' : 'AI 하프타임 코칭'}</span>
-            <p>{halfTimeMsg}</p>
-            <button className="link-btn" onClick={() => setHalfTimeMsg(null)}>✕</button>
+            <span className="halftime-ai-title">
+              🎙️ {lang === 'en' ? `Q${quarterMsg.q} AI Coaching` : `AI ${quarterMsg.q}쿼터 코칭`}
+            </span>
+            <p>{quarterMsg.text}</p>
+            <button className="link-btn" onClick={() => setQuarterMsg(null)}>✕</button>
+          </div>
+        )}
+        {dangerAlert && (
+          <div className="halftime-ai danger-alert">
+            <p>{dangerAlert}</p>
+            <button className="link-btn" onClick={() => setDangerAlert(null)}>✕</button>
           </div>
         )}
 
