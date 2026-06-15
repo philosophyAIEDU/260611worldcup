@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
 import { FORMATIONS, MENTALITIES, PLAYSTYLES, autoLineup, defaultPlaystyle } from '../engine/matchEngine.js';
 import { formationLabel, mentalityLabel, playstyleLabel, posLabel } from '../engine/labels.js';
@@ -6,6 +6,7 @@ import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
 import PlayerChat from './PlayerChat.jsx';
+import { askCoach, getApiKey } from '../engine/aiCoach.js';
 
 const POS_ORDER = { GK: 0, DF: 1, MF: 2, FW: 3 };
 
@@ -58,6 +59,8 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
   const [lineup, setLineup] = useState(() => autoLineup(squad, '4-3-3'));
   const [picked, setPicked] = useState(null); // 교체 대상으로 선택된 선발 선수 이름
   const [chatPlayer, setChatPlayer] = useState(null); // 대화 중인 선수
+  const [scoutReport, setScoutReport] = useState(null);
+  const scoutFired = useRef(false);
 
   const starters = lineup.map((n) => squad.find((p) => p.name === n));
   const bench = squad.filter((p) => !lineup.includes(p.name));
@@ -100,6 +103,22 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
     ].join('\n');
   }, [starters, bench, formation, mentality, playstyle, myTeam, oppTeam, label, knockout, lang]);
 
+  // 경기 전 자동 스카우팅 리포트
+  useEffect(() => {
+    if (scoutFired.current) return;
+    const key = getApiKey();
+    if (!key) return;
+    scoutFired.current = true;
+    const oppStars = oppTeam.players.filter((p) => p.isStar).map((p) => (lang === 'en' ? p.nameEn : p.name) + `(${p.overall})`).join(', ');
+    const en = lang === 'en';
+    const ctx = en
+      ? `You are a football scout AI. Scout report for ${oppTeam.nameEn || oppTeam.name} (FIFA #${oppTeam.ranking}, rating ${oppTeam.rating}). Key players: ${oppStars || 'none'}. Give a 3-line scouting report: 1 main threat, 1 weakness to exploit, 1 recommended tactic. Plain text, max 60 words.`
+      : `당신은 축구 스카우트 AI다. ${oppTeam.name}(FIFA ${oppTeam.ranking}위, 전력 ${oppTeam.rating}) 스카우팅 리포트. 핵심 선수: ${oppStars || '없음'}. 주요 위협 1가지, 공략 가능한 약점 1가지, 추천 전술 1가지를 간결한 한국어 3줄로.`;
+    askCoach(key, ctx, [{ role: 'user', text: en ? 'Scout report?' : '스카우팅 리포트?' }])
+      .then((msg) => setScoutReport(msg))
+      .catch(() => {});
+  }, []);
+
   const coachQuickPrompts = [
     { label: t('coach.q.scout'), prompt: t('coach.p.scout') },
     { label: t('coach.q.predict'), prompt: t('coach.p.predict') },
@@ -116,6 +135,20 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
           <span className="side">{tn(TEAMS[away])} <Flag code={away} size={26} /></span>
         </div>
       </div>
+
+      {(scoutReport || (!scoutReport && getApiKey())) && (
+        <div className="panel">
+          <div className="halftime-ai" style={{ margin: 0 }}>
+            <span className="halftime-ai-title">
+              🔍 {lang === 'en' ? `Scout Report · ${oppTeam.nameEn || oppTeam.name}` : `스카우팅 리포트 · ${oppTeam.name}`}
+            </span>
+            {scoutReport
+              ? <p>{scoutReport}</p>
+              : <p style={{ color: 'var(--dim)' }}>{lang === 'en' ? 'Analysing opponent…' : '상대 분석 중…'}</p>
+            }
+          </div>
+        </div>
+      )}
 
       <div className="panel">
         <h3>{t('lineup.board')}</h3>

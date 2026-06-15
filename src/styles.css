@@ -218,6 +218,25 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 .halftime-ai p { margin: 0; white-space: pre-wrap; }
 .halftime-ai .link-btn { position: absolute; top: 8px; right: 12px; font-size: 0.85rem; }
 .danger-alert { background: #fff3f3; border-color: #e05a5a; color: #7a1a1a; }
+.sub-alert { background: #f0fff4; border-color: #4cd97c; color: #1a5c2e; }
+.penalty-alert { background: #fff8e8; border-color: var(--gold); color: #5c3a00; }
+
+/* ── 쿼터 통계 그래프 ─────────────────────────── */
+.quarter-chart { margin: 14px 0 6px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #f8fafb; }
+.quarter-chart-title { font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; color: var(--navy); }
+.quarter-chart-grid { display: flex; gap: 8px; }
+.quarter-col { flex: 1; text-align: center; border: 1px solid var(--line); border-radius: 8px; padding: 8px 4px; background: #fff; }
+.quarter-label { font-size: 0.75rem; font-weight: 800; color: var(--dim); margin-bottom: 4px; }
+.quarter-goals { font-size: 1.1rem; font-weight: 800; color: var(--green-dark); }
+.quarter-chances { font-size: 0.72rem; color: var(--dim); margin-top: 2px; }
+
+/* ── 경기 후 AI 총평 + MVP ────────────────────── */
+.post-match-panel { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.post-match-summary { position: relative; background: #eef8ff; border: 1.5px solid #6bb8f0; border-radius: 12px; padding: 12px 14px; font-size: 0.9rem; line-height: 1.55; color: #1a3a5c; }
+.post-match-summary p { margin: 0; }
+.mvp-interview { background: linear-gradient(135deg, #fffbea 0%, #fff3d0 100%); border: 1.5px solid var(--gold); border-radius: 12px; padding: 12px 14px; }
+.mvp-badge { font-weight: 800; font-size: 0.95rem; color: #7a4f00; display: block; margin-bottom: 6px; }
+.mvp-quote { margin: 0; font-style: italic; font-size: 0.92rem; color: #4a3000; line-height: 1.6; }
 
 /* ── 중계 피드 ───────────────────────────────── */
 .feed {
