@@ -11,6 +11,7 @@ export default function EndScreen({ game, onRestart }) {
   const champ = game.champion ? TEAMS[game.champion] : null;
   const iWon = game.champion === game.myTeam;
   const me = TEAMS[game.myTeam];
+  const ucl = game.comp === 'ucl';
 
   // 우승 시 세리머니 팡파레.
   useEffect(() => {
@@ -23,8 +24,8 @@ export default function EndScreen({ game, onRestart }) {
         <div className="trophy">{iWon ? '🏆' : '🎬'}</div>
         {iWon ? (
           <>
-            <h2><Flag code={me.code} size={30} /> {t('end.championTitle', { me: tn(me) })}</h2>
-            <p>{t('end.championDesc', { me: tn(me) })}</p>
+            <h2><Flag code={me.code} size={30} /> {t(ucl ? 'end.championTitleUcl' : 'end.championTitle', { me: tn(me) })}</h2>
+            <p>{t(ucl ? 'end.championDescUcl' : 'end.championDesc', { me: tn(me) })}</p>
           </>
         ) : (
           <>

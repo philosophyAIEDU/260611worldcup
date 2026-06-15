@@ -74,6 +74,12 @@ h3 { font-size: 1.02rem; }
 }
 .hero h1 { font-size: 3.4rem; margin-bottom: 14px; letter-spacing: 2px; color: var(--navy); position: relative; }
 .hero h1 span { color: var(--green); }
+.comp-pill {
+  display: inline-block; position: relative;
+  margin-bottom: 22px; padding: 6px 16px; border-radius: 999px;
+  background: rgba(14, 122, 58, 0.12); color: var(--green);
+  font-weight: 800; letter-spacing: 0.5px; font-size: 0.95rem;
+}
 .hero p { color: var(--dim); margin-bottom: 34px; line-height: 1.7; font-size: 1.08rem; font-weight: 600; position: relative; }
 .hero .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; }
 

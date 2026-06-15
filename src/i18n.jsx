@@ -24,6 +24,19 @@ function storeLang(l) {
 // 값은 문자열 또는 vars를 받는 함수. {var} 자리표시자는 자동 치환된다.
 const STRINGS = {
   'app.sub': { ko: '2026 FIFA 북중미 월드컵 시뮬레이터', en: '2026 FIFA World Cup Simulator' },
+  'app.subUcl': { ko: 'UEFA 챔피언스리그 시뮬레이터', en: 'UEFA Champions League Simulator' },
+
+  // 대회 선택
+  'compselect.title': { ko: '대회를 선택하세요', en: 'Choose your competition' },
+  'compselect.subtitle': {
+    ko: '두 대회 모두 같은 감독 모드로 즐길 수 있습니다. 선택은 저장되며 홈에서 언제든 바꿀 수 있어요.',
+    en: 'Both run on the same manager mode. Your choice is saved and you can switch any time from home.',
+  },
+  'comp.wc': { ko: 'FIFA 월드컵 2026', en: 'FIFA World Cup 2026' },
+  'comp.ucl': { ko: 'UEFA 챔피언스리그', en: 'UEFA Champions League' },
+  'comp.wcDesc': { ko: '48개국 · 국가대표 토너먼트', en: '48 nations · national teams' },
+  'comp.uclDesc': { ko: '유럽 32개 클럽 · 클럽 토너먼트', en: '32 European clubs · club football' },
+  'home.changeComp': { ko: '⇄ 다른 대회 선택', en: '⇄ Change competition' },
   'music.play': { ko: '배경음악 재생', en: 'Play background music' },
   'music.pause': { ko: '배경음악 정지', en: 'Pause background music' },
   'music.track': { ko: ({ n }) => `배경음악 ${n}번`, en: ({ n }) => `Track ${n}` },
@@ -49,6 +62,10 @@ const STRINGS = {
     ko: '48개국, 104경기, 단 하나의 트로피.\n선발·전술·교체까지, 당신이 감독입니다.',
     en: '48 nations, 104 matches, one trophy.\nLineups, tactics, substitutions — you are the manager.',
   },
+  'home.taglineUcl': {
+    ko: '유럽 최강 32개 클럽, 단 하나의 빅이어.\n선발·전술·교체까지, 당신이 감독입니다.',
+    en: "Europe's 32 elite clubs, one Big Ear trophy.\nLineups, tactics, substitutions — you are the manager.",
+  },
   'home.new': { ko: '새 게임 시작', en: 'New Game' },
   'home.resume': { ko: '이어하기', en: 'Continue' },
 
@@ -59,6 +76,7 @@ const STRINGS = {
   'common.eliminated': { ko: '탈락', en: 'Eliminated' },
   'common.tournament': { ko: '토너먼트', en: 'Knockout' },
   'common.fifaRank': { ko: ({ n }) => `FIFA 랭킹 ${n}위`, en: ({ n }) => `FIFA Rank #${n}` },
+  'common.clubRank': { ko: ({ n }) => `클럽 랭킹 ${n}위`, en: ({ n }) => `Club Rank #${n}` },
 
   // 팀 선택
   'select.title': { ko: '국가 선택', en: 'Choose Your Nation' },
@@ -67,6 +85,23 @@ const STRINGS = {
     en: 'Pick one of the 48 nations at the 2026 World Cup to lead.',
   },
   'select.confCount': { ko: ({ label, n }) => `${label} · ${n}개국`, en: ({ label, n }) => `${label} · ${n} teams` },
+
+  // 클럽 선택 (챔피언스리그)
+  'clubselect.title': { ko: '클럽 선택', en: 'Choose Your Club' },
+  'clubselect.desc': {
+    ko: '챔피언스리그에 출전하는 유럽 32개 클럽 중 당신이 이끌 팀을 선택하세요.',
+    en: 'Pick one of the 32 European clubs in the Champions League to lead.',
+  },
+  'league.eng': { ko: '잉글랜드 (프리미어리그)', en: 'England (Premier League)' },
+  'league.esp': { ko: '스페인 (라리가)', en: 'Spain (LaLiga)' },
+  'league.ita': { ko: '이탈리아 (세리에 A)', en: 'Italy (Serie A)' },
+  'league.ger': { ko: '독일 (분데스리가)', en: 'Germany (Bundesliga)' },
+  'league.fra': { ko: '프랑스 (리그 1)', en: 'France (Ligue 1)' },
+  'league.por': { ko: '포르투갈 (프리메이라 리가)', en: 'Portugal (Primeira Liga)' },
+  'league.ned': { ko: '네덜란드 (에레디비시)', en: 'Netherlands (Eredivisie)' },
+  'league.tur': { ko: '튀르키예 (쉬페르리그)', en: 'Türkiye (Süper Lig)' },
+  'league.sco': { ko: '스코틀랜드 (프리미어십)', en: 'Scotland (Premiership)' },
+  'league.bel': { ko: '벨기에 (프로 리그)', en: 'Belgium (Pro League)' },
 
   // 대륙 연맹
   'conf.UEFA': { ko: '유럽 (UEFA)', en: 'Europe (UEFA)' },
@@ -92,6 +127,7 @@ const STRINGS = {
   'squad.legend': { ko: '레전드', en: 'Legend' },
   'squad.other': { ko: '다른 팀 보기', en: 'View other teams' },
   'squad.confirm': { ko: '이 팀으로 월드컵 도전 🏆', en: 'Take this team to the World Cup 🏆' },
+  'squad.confirmClub': { ko: '이 클럽으로 챔피언스리그 도전 🏆', en: 'Take this club to the Champions League 🏆' },
 
   // 허브
   'hub.groupBadge': { ko: ({ g, n }) => `조별리그 ${g}조 · ${n}차전`, en: ({ g, n }) => `Group ${g} · Matchday ${n}` },
@@ -119,6 +155,10 @@ const STRINGS = {
   'fixture.meta': {
     ko: ({ hr, hrt, ar, art }) => `FIFA 랭킹 ${hr}위 (전력 ${hrt}) vs ${ar}위 (전력 ${art})`,
     en: ({ hr, hrt, ar, art }) => `FIFA #${hr} (rating ${hrt}) vs #${ar} (rating ${art})`,
+  },
+  'fixture.metaClub': {
+    ko: ({ hr, hrt, ar, art }) => `클럽 랭킹 ${hr}위 (전력 ${hrt}) vs ${ar}위 (전력 ${art})`,
+    en: ({ hr, hrt, ar, art }) => `Club #${hr} (rating ${hrt}) vs #${ar} (rating ${art})`,
   },
   'fixture.prep': { ko: '📋 경기 준비 (선발·전술)', en: '📋 Prepare Match (lineup & tactics)' },
 
@@ -203,6 +243,11 @@ const STRINGS = {
   'end.championDesc': {
     ko: ({ me }) => `당신의 지휘 아래 ${me}이(가) 세계 정상에 올랐습니다. 역사에 남을 여정이었습니다.`,
     en: ({ me }) => `Under your command, ${me} reached the summit of world football. A journey for the history books.`,
+  },
+  'end.championTitleUcl': { ko: ({ me }) => `${me}, 챔피언스리그 우승!`, en: ({ me }) => `${me} — Champions League Winners!` },
+  'end.championDescUcl': {
+    ko: ({ me }) => `당신의 지휘 아래 ${me}이(가) 유럽 정상에 올랐습니다. 빅이어가 당신의 것입니다.`,
+    en: ({ me }) => `Under your command, ${me} conquered Europe. The Big Ear is yours.`,
   },
   'end.over': { ko: '대회 종료', en: 'Tournament Over' },
   'end.summary': {
