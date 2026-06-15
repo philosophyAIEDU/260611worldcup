@@ -357,6 +357,79 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
   return m;
 }
 
+// ── 경기 통계 & 선수 평점 ────────────────────────────────────────
+// 한쪽 팀의 누적 통계(슈팅/유효슈팅/파울/경고)를 이벤트 로그에서 집계.
+export function teamStats(events, side) {
+  const ev = events.filter((e) => e.side === side);
+  const goals = ev.filter((e) => e.type === 'goal').length;
+  const chances = ev.filter((e) => e.type === 'chance').length;
+  const saves = ev.filter((e) => e.type === 'save').length;
+  const fouls = ev.filter((e) => e.type === 'foul').length;
+  const yellows = ev.filter((e) => e.type === 'yellow').length;
+  const pressure = ev.filter((e) => e.type === 'pressure').length;
+  return {
+    goals,
+    shots: goals + chances + saves,
+    onTarget: goals + saves,
+    fouls: fouls + yellows,
+    yellows,
+    // 공격 활동량(점유율 추정에 사용)
+    attackWeight: goals * 3 + chances * 2 + saves * 2 + pressure,
+  };
+}
+
+// 양 팀 점유율(%) 추정 — 공격 활동량 비율. 합이 0이면 50:50.
+export function possession(events) {
+  const h = teamStats(events, 'home').attackWeight;
+  const a = teamStats(events, 'away').attackWeight;
+  const total = h + a;
+  if (total === 0) return { home: 50, away: 50 };
+  const home = Math.round((h / total) * 100);
+  return { home, away: 100 - home };
+}
+
+// 선수 평점(6.0~10.0). 득점/도움/실점/포지션/컨디션 기반의 결정론적 계산.
+// side: 경기 종료 시점의 한쪽(eleven/bench/team), scorers/assisters: 전체 기록.
+export function playerRatings(side, scorers, assisters, goalsConceded) {
+  const myCode = side.team.code;
+  const goalsBy = {}; const assistsBy = {};
+  scorers.filter((s) => s.team === myCode).forEach((s) => { goalsBy[s.name] = (goalsBy[s.name] || 0) + 1; });
+  assisters.filter((s) => s.team === myCode).forEach((s) => { assistsBy[s.name] = (assistsBy[s.name] || 0) + 1; });
+
+  // 경기에 관여한 선수: 현재 11명 + 득점/도움 기록자(교체로 빠졌어도 평점)
+  const played = new Map();
+  side.eleven.forEach((p) => played.set(p.name, p));
+  side.bench.forEach((p) => {
+    if (goalsBy[p.name] || assistsBy[p.name]) played.set(p.name, p);
+  });
+
+  const ratings = [];
+  for (const p of played.values()) {
+    let r = 6.4;
+    const g = goalsBy[p.name] || 0;
+    const a = assistsBy[p.name] || 0;
+    r += g * 1.25 + a * 0.85;
+    // 컨디션 보정
+    r += (p.condition - 0.85) * 1.2;
+    // 포지션별 실점 영향(GK/DF는 클린시트 보너스/실점 페널티)
+    if (p.position === 'GK') {
+      r += 0.3;
+      if (goalsConceded === 0) r += 1.1;
+      else r -= goalsConceded * 0.32;
+    } else if (p.position === 'DF') {
+      if (goalsConceded === 0) r += 0.6;
+      else r -= goalsConceded * 0.14;
+    }
+    // 스타는 약간의 기대 보정(활약 없으면 살짝 감점, 활약하면 가점)
+    if (p.isStar) r += (g + a > 0) ? 0.2 : -0.15;
+    r = Math.max(5.5, Math.min(10, Math.round(r * 10) / 10));
+    ratings.push({ name: p.name, nameEn: p.nameEn, position: p.position, overall: p.overall, isStar: p.isStar, goals: g, assists: a, rating: r });
+  }
+  // 평점 내림차순
+  ratings.sort((x, y) => y.rating - x.rating || (y.goals + y.assists) - (x.goals + x.assists));
+  return ratings;
+}
+
 // AI vs AI 경기를 끝까지 즉시 진행
 export function simulateMatch(homeTeam, awayTeam, opts = {}) {
   const m = createMatch(homeTeam, awayTeam, opts);

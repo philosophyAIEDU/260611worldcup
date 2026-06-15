@@ -238,6 +238,29 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 .mvp-badge { font-weight: 800; font-size: 0.95rem; color: #7a4f00; display: block; margin-bottom: 6px; }
 .mvp-quote { margin: 0; font-style: italic; font-size: 0.92rem; color: #4a3000; line-height: 1.6; }
 
+/* ── 라이브 경기 통계 ─────────────────────────── */
+.live-stats { margin: 6px 0 12px; display: flex; flex-direction: column; gap: 7px; }
+.ls-row { display: flex; align-items: center; gap: 10px; }
+.ls-val { font-weight: 800; font-size: 0.9rem; min-width: 38px; text-align: center; font-variant-numeric: tabular-nums; color: var(--navy); }
+.ls-mid { flex: 1; }
+.ls-label { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--dim); margin-bottom: 2px; }
+.ls-track { display: flex; height: 6px; border-radius: 4px; overflow: hidden; background: var(--line); }
+.ls-fill.home { background: #4cd97c; transition: width 0.4s ease; }
+.ls-fill.away { background: #e05a5a; transition: width 0.4s ease; }
+
+/* ── 선수 평점 ───────────────────────────────── */
+.ratings-panel { margin: 14px 0 6px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #f8fafb; }
+.motm-tag { font-size: 0.8rem; color: var(--gold); font-weight: 800; margin-left: 6px; }
+.ratings-list { display: flex; flex-direction: column; gap: 4px; }
+.rating-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; background: #fff; border: 1px solid var(--line); }
+.rating-row.motm { background: linear-gradient(135deg, #fffbea 0%, #fff3d0 100%); border-color: var(--gold); }
+.rating-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.rating-contrib { font-size: 0.82rem; color: var(--dim); }
+.rating-score { font-weight: 800; font-size: 0.95rem; font-variant-numeric: tabular-nums; padding: 1px 8px; border-radius: 6px; color: #fff; min-width: 44px; text-align: center; }
+.rating-score.high { background: #2faa55; }
+.rating-score.mid { background: #6b9bd1; }
+.rating-score.low { background: #b0b0b0; }
+
 /* ── 중계 피드 ───────────────────────────────── */
 .feed {
   background: #fbfdfb; border: 1px solid var(--line); border-radius: 12px;

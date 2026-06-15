@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
-import { FORMATIONS, MENTALITIES, PLAYSTYLES, MAX_SUBS } from '../engine/matchEngine.js';
+import { FORMATIONS, MENTALITIES, PLAYSTYLES, MAX_SUBS, teamStats, possession, playerRatings } from '../engine/matchEngine.js';
 import { formationLabel, mentalityLabel, playstyleLabel, posLabel } from '../engine/labels.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
@@ -162,28 +162,22 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
     const oppGoals = mySide === 'home' ? m.ag : m.hg;
     const opp = mySide === 'home' ? TEAMS[m.awayTeam.code] : TEAMS[m.homeTeam.code];
     const mine2 = m[mySide];
-    // MVP 선정: 우리 팀 득점자 중 최다골, 없으면 선발 최고 OVR
-    const myScorers = m.scorers.filter((s) => s.side === mySide);
-    let mvpName = null; let mvpNameEn = null;
-    if (myScorers.length > 0) {
-      const counts = {};
-      myScorers.forEach((s) => { counts[s.name] = (counts[s.name] || 0) + 1; });
-      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-      const p = mine2.eleven.find((x) => x.name === top) || mine2.bench.find((x) => x.name === top);
-      if (p) { mvpName = p.name; mvpNameEn = p.nameEn; }
-    }
-    if (!mvpName) {
-      const best = [...mine2.eleven].sort((a, b) => b.overall - a.overall)[0];
-      if (best) { mvpName = best.name; mvpNameEn = best.nameEn; }
-    }
+    // MVP = 맨 오브 더 매치(평점 1위)
+    const conceded = mySide === 'home' ? m.ag : m.hg;
+    const rs = playerRatings(mine2, m.scorers, m.assisters, conceded);
+    const top = rs[0];
+    if (!top) return;
     const en = lang === 'en';
-    const mvpDisplay = en ? (mvpNameEn || mvpName) : mvpName;
+    const mvpDisplay = en ? (top.nameEn || top.name) : top.name;
     const summaryCtx = en
       ? `You are a football AI analyst. The match just ended: ${tn(mine2.team)} ${myGoals} - ${oppGoals} ${tn(opp)}. In 2-3 sentences, summarize the match tactically and name ${mvpDisplay} as your MVP with one reason. Plain text only.`
       : `당신은 축구 AI 분석가다. 방금 경기가 끝났다: ${tn(mine2.team)} ${myGoals} - ${oppGoals} ${tn(opp)}. 경기를 전술적으로 2~3문장 요약하고, MVP로 ${mvpDisplay}을(를) 선정한 이유를 한 문장으로 밝혀라. 평문으로.`;
+    const statLine = en
+      ? `You were Man of the Match (rating ${top.rating}/10${top.goals ? `, ${top.goals} goal(s)` : ''}${top.assists ? `, ${top.assists} assist(s)` : ''}).`
+      : `너는 맨 오브 더 매치다 (평점 ${top.rating}/10${top.goals ? `, ${top.goals}골` : ''}${top.assists ? `, ${top.assists}도움` : ''}).`;
     const interviewCtx = en
-      ? `You ARE ${mvpDisplay}, a football player who just played for ${tn(mine2.team)} in a ${myGoals}-${oppGoals} match vs ${tn(opp)} at the 2026 World Cup. Stay fully in character. Answer the post-match interview question in 2-3 natural sentences as the player.`
-      : `너는 2026 월드컵에서 ${tn(mine2.team)} 소속으로 ${tn(opp)}와의 ${myGoals}-${oppGoals} 경기를 뛴 ${mvpDisplay} 선수다. 완전히 1인칭으로 캐릭터를 유지하라. 경기 후 인터뷰 질문에 2~3문장으로 자연스럽게 답하라.`;
+      ? `You ARE ${mvpDisplay}, a football player who just played for ${tn(mine2.team)} in a ${myGoals}-${oppGoals} match vs ${tn(opp)} at the 2026 World Cup. ${statLine} Stay fully in character. Answer the post-match interview question in 2-3 natural sentences as the player.`
+      : `너는 2026 월드컵에서 ${tn(mine2.team)} 소속으로 ${tn(opp)}와의 ${myGoals}-${oppGoals} 경기를 뛴 ${mvpDisplay} 선수다. ${statLine} 완전히 1인칭으로 캐릭터를 유지하라. 경기 후 인터뷰 질문에 2~3문장으로 자연스럽게 답하라.`;
     const interviewQ = en ? 'How do you feel about your performance today?' : '오늘 경기 소감이 어떠세요?';
 
     Promise.all([
@@ -231,6 +225,22 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
         : '교체 추천, 성향 변경(공격적/균형/수비적), 시간 관리 등을 조언할 수 있다.',
     ].join('\n');
   }, [benchOpen, m.minute, lang]); // 패널 열 때 기준으로 갱신
+
+  // 선수 평점 & 맨 오브 더 매치 (경기 종료 후, API 키 없이도 표시)
+  const ratings = useMemo(() => {
+    if (!done || !mine) return [];
+    const conceded = mySide === 'home' ? m.ag : m.hg;
+    return playerRatings(mine, m.scorers, m.assisters, conceded);
+  }, [done, mine, mySide]);
+  const motm = ratings[0] || null;
+
+  // 라이브 경기 통계 (점유율/슈팅/유효슈팅/파울)
+  const liveStats = useMemo(() => {
+    const h = teamStats(m.events, 'home');
+    const a = teamStats(m.events, 'away');
+    const poss = possession(m.events);
+    return { h, a, poss };
+  }, [m.events.length]);
 
   // 쿼터별 골 통계 (경기 종료 후 표시)
   const quarterStats = useMemo(() => {
@@ -288,6 +298,32 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               <div className="momentum-fill away" style={{ width: `${100 - momentum}%` }} />
             </div>
             <span className="momentum-label">{tn(away)}</span>
+          </div>
+        )}
+
+        {m.minute > 0 && (
+          <div className="live-stats">
+            {[
+              { label: lang === 'en' ? 'Possession' : '점유율', h: `${liveStats.poss.home}%`, a: `${liveStats.poss.away}%`, hv: liveStats.poss.home, av: liveStats.poss.away },
+              { label: lang === 'en' ? 'Shots' : '슈팅', h: liveStats.h.shots, a: liveStats.a.shots, hv: liveStats.h.shots, av: liveStats.a.shots },
+              { label: lang === 'en' ? 'On Target' : '유효슈팅', h: liveStats.h.onTarget, a: liveStats.a.onTarget, hv: liveStats.h.onTarget, av: liveStats.a.onTarget },
+              { label: lang === 'en' ? 'Fouls' : '파울', h: liveStats.h.fouls, a: liveStats.a.fouls, hv: liveStats.h.fouls, av: liveStats.a.fouls },
+            ].map((row) => {
+              const tot = (row.hv + row.av) || 1;
+              return (
+                <div className="ls-row" key={row.label}>
+                  <span className="ls-val">{row.h}</span>
+                  <div className="ls-mid">
+                    <div className="ls-label">{row.label}</div>
+                    <div className="ls-track">
+                      <div className="ls-fill home" style={{ width: `${(row.hv / tot) * 100}%` }} />
+                      <div className="ls-fill away" style={{ width: `${(row.av / tot) * 100}%` }} />
+                    </div>
+                  </div>
+                  <span className="ls-val">{row.a}</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -371,6 +407,33 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           </div>
         )}
 
+        {done && ratings.length > 0 && (
+          <div className="ratings-panel">
+            <div className="quarter-chart-title">
+              {lang === 'en' ? '⭐ Player Ratings' : '⭐ 선수 평점'}
+              {motm && <span className="motm-tag"> 🏅 MOTM · {pn(motm)} {motm.rating.toFixed(1)}</span>}
+            </div>
+            <div className="ratings-list">
+              {ratings.map((r) => (
+                <div key={r.name} className={`rating-row ${r === motm ? 'motm' : ''}`}>
+                  <span className={`pos-chip pos-${r.position}`}>{r.position}</span>
+                  <span className="rating-name">
+                    {pn(r)}{r.isStar && <span className="star"> ★</span>}
+                    {(r.goals > 0 || r.assists > 0) && (
+                      <span className="rating-contrib">
+                        {r.goals > 0 && ` ⚽${r.goals}`}{r.assists > 0 && ` 🅰️${r.assists}`}
+                      </span>
+                    )}
+                  </span>
+                  <span className={`rating-score ${r.rating >= 8 ? 'high' : r.rating >= 7 ? 'mid' : 'low'}`}>
+                    {r.rating.toFixed(1)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {done && postMatch && (
           <div className="post-match-panel">
             <div className="post-match-summary">
@@ -378,7 +441,7 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               <p>{postMatch.summary}</p>
             </div>
             <div className="mvp-interview">
-              <span className="mvp-badge">🏅 MVP · {postMatch.mvpName}</span>
+              <span className="mvp-badge">🎙️ {lang === 'en' ? 'MOTM Interview' : 'MOTM 인터뷰'} · {postMatch.mvpName}</span>
               <p className="mvp-quote">"{postMatch.interview}"</p>
             </div>
           </div>
