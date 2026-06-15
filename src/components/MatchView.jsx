@@ -7,6 +7,7 @@ import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
 import PlayerChat from './PlayerChat.jsx';
 import { isSfxOn, setSfxOn, playEventSound, playFinalWhistle, startAmbience, stopAmbience } from '../engine/sfx.js';
+import { askCoach, getApiKey } from '../engine/aiCoach.js';
 
 function condClass(c) {
   if (c >= 0.9) return 'cond-hot';
@@ -32,6 +33,8 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const [pickedOut, setPickedOut] = useState(null);
   const [chatPlayer, setChatPlayer] = useState(null);
   const [sfxOn, setSfx] = useState(isSfxOn());
+  const [halfTimeMsg, setHalfTimeMsg] = useState(null);
+  const halfTimeFired = useRef(false);
   const matchRef = useRef(match);
   const seenEvents = useRef(match.events.length);
 
@@ -63,9 +66,26 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
     const iv = setInterval(() => {
       m.advance();
       force((x) => x + 1);
-    }, speed === 1 ? 110 : 35);
+      // 하프타임 AI 분석 자동 트리거 (45분, 1회)
+      if (m.minute === 45 && !halfTimeFired.current && mine) {
+        const key = getApiKey();
+        if (key) {
+          halfTimeFired.current = true;
+          const myGoals = mySide === 'home' ? m.hg : m.ag;
+          const oppGoals = mySide === 'home' ? m.ag : m.hg;
+          const opp = mySide === 'home' ? TEAMS[m.awayTeam.code] : TEAMS[m.homeTeam.code];
+          const en = lang === 'en';
+          const ctx = en
+            ? `You are a football AI coach. Half-time. Score: ${myGoals}-${oppGoals} vs ${opp.nameEn || opp.name}. Our formation: ${mine.formation}, mentality: ${mentalityLabel(mine.mentality,'en')}, subs used: ${mine.subsUsed}/${MAX_SUBS}. Give 2 sharp tactical tips for the second half in plain English, max 60 words.`
+            : `당신은 축구 AI 코치다. 전반 종료. 스코어 ${myGoals}-${oppGoals} (상대: ${opp.name}). 우리 포메이션: ${mine.formation}, 성향: ${mentalityLabel(mine.mentality,'ko')}, 교체 ${mine.subsUsed}/${MAX_SUBS} 사용. 후반 전술 조언 2가지를 간결한 한국어로, 60자 이내로.`;
+          askCoach(key, ctx, [{ role: 'user', text: en ? 'Half-time coaching advice?' : '하프타임 전술 조언?' }])
+            .then((msg) => setHalfTimeMsg(msg))
+            .catch(() => {});
+        }
+      }
+    }, speed === 1 ? 220 : 70);
     return () => clearInterval(iv);
-  }, [done, paused, benchOpen, speed, m]);
+  }, [done, paused, benchOpen, speed, m, lang, mine, mySide]);
 
   const skip = () => {
     while (!m.finished) m.advance();
@@ -108,6 +128,18 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
     ].join('\n');
   }, [benchOpen, m.minute, lang]); // 패널 열 때 기준으로 갱신
 
+  // 최근 20개 이벤트 기준 모멘텀 계산 (goal=3, chance/save=2, pressure=1)
+  const momentum = useMemo(() => {
+    const recent = m.events.slice(-20);
+    let h = 0; let a = 0;
+    recent.forEach((ev) => {
+      const w = ev.type === 'goal' ? 3 : (ev.type === 'chance' || ev.type === 'save') ? 2 : ev.type === 'pressure' ? 1 : 0;
+      if (ev.side === 'home') h += w; else a += w;
+    });
+    const total = h + a;
+    return total === 0 ? 50 : Math.round((h / total) * 100);
+  }, [m.events.length]);
+
   const clockText = done
     ? result.upset ? t('match.endUpset') : t('match.end')
     : m.minute > 90
@@ -127,6 +159,25 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           <div className="pso-line">{t('match.shootout', { h: m.shootout.homeScore, a: m.shootout.awayScore })}</div>
         )}
         <div className="clock">{clockText}</div>
+
+        {!done && m.minute > 0 && (
+          <div className="momentum-wrap">
+            <span className="momentum-label">{tn(home)}</span>
+            <div className="momentum-bar">
+              <div className="momentum-fill home" style={{ width: `${momentum}%` }} />
+              <div className="momentum-fill away" style={{ width: `${100 - momentum}%` }} />
+            </div>
+            <span className="momentum-label">{tn(away)}</span>
+          </div>
+        )}
+
+        {halfTimeMsg && (
+          <div className="halftime-ai">
+            <span className="halftime-ai-title">🎙️ {lang === 'en' ? 'Half-time AI Coaching' : 'AI 하프타임 코칭'}</span>
+            <p>{halfTimeMsg}</p>
+            <button className="link-btn" onClick={() => setHalfTimeMsg(null)}>✕</button>
+          </div>
+        )}
 
         <div className="feed">
           {[...m.events].reverse().map((ev, i) => (

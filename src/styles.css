@@ -196,6 +196,28 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
   font-variant-numeric: tabular-nums; font-size: 1.05rem;
 }
 
+/* ── 모멘텀 바 ───────────────────────────────── */
+.momentum-wrap {
+  display: flex; align-items: center; gap: 8px; margin: 6px 0 10px;
+}
+.momentum-label { font-size: 0.75rem; font-weight: 700; color: var(--dim); white-space: nowrap; flex: 0 0 auto; max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+.momentum-bar {
+  flex: 1; height: 8px; border-radius: 6px; display: flex; overflow: hidden;
+  background: var(--line);
+}
+.momentum-fill.home { background: #4cd97c; transition: width 0.4s ease; }
+.momentum-fill.away { background: #e05a5a; transition: width 0.4s ease; }
+
+/* ── 하프타임 AI 박스 ─────────────────────────── */
+.halftime-ai {
+  position: relative; background: #eef8ff; border: 1.5px solid #6bb8f0;
+  border-radius: 12px; padding: 12px 36px 12px 14px; margin: 8px 0 10px;
+  font-size: 0.9rem; line-height: 1.55; color: #1a3a5c;
+}
+.halftime-ai-title { font-weight: 800; display: block; margin-bottom: 4px; }
+.halftime-ai p { margin: 0; white-space: pre-wrap; }
+.halftime-ai .link-btn { position: absolute; top: 8px; right: 12px; font-size: 0.85rem; }
+
 /* ── 중계 피드 ───────────────────────────────── */
 .feed {
   background: #fbfdfb; border: 1px solid var(--line); border-radius: 12px;
