@@ -343,6 +343,7 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 .coach-head {
   display: flex; justify-content: space-between; align-items: center;
   font-weight: 800; margin-bottom: 10px; color: var(--navy);
+  gap: 8px; flex-wrap: wrap;
 }
 .coach-keybox p { color: var(--dim); font-size: 0.88rem; font-weight: 600; line-height: 1.6; margin-bottom: 10px; }
 .coach-hint { font-size: 0.78rem !important; }
@@ -535,4 +536,40 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 
   /* 팀 선택 카드 1열 */
   .team-grid { grid-template-columns: 1fr; }
+
+  /* ── 라이브 경기 통계 ── */
+  .live-stats { gap: 6px; }
+  .ls-val { min-width: 30px; font-size: 0.82rem; }
+  .ls-label { font-size: 0.66rem; }
+  .ls-row { gap: 7px; }
+
+  /* ── 모멘텀 바 ── */
+  .momentum-label { max-width: 72px; font-size: 0.68rem; }
+
+  /* ── 쿼터별 통계 그래프 ── */
+  .quarter-chart { padding: 10px; }
+  .quarter-chart-grid { gap: 5px; }
+  .quarter-col { padding: 6px 2px; }
+  .quarter-label { font-size: 0.68rem; }
+  .quarter-goals { font-size: 0.95rem; }
+  .quarter-chances { font-size: 0.6rem; }
+  .quarter-chart-title { font-size: 0.85rem; }
+  .motm-tag { display: block; margin: 4px 0 0; }
+
+  /* ── 선수 평점 ── */
+  .ratings-panel { padding: 10px; }
+  .rating-row { gap: 6px; padding: 5px 7px; }
+  .rating-name { font-size: 0.85rem; }
+  .rating-contrib { font-size: 0.75rem; }
+  .rating-score { min-width: 40px; font-size: 0.9rem; padding: 1px 6px; }
+
+  /* ── AI 코칭/경고 박스 ── */
+  .halftime-ai { font-size: 0.85rem; padding: 11px 32px 11px 12px; }
+  .post-match-summary, .mvp-interview { padding: 11px 12px; }
+  .mvp-badge { font-size: 0.88rem; }
+  .mvp-quote { font-size: 0.86rem; }
+
+  /* ── 쿼터 브레이크 배너 ── */
+  .quarter-break-banner { padding: 14px 12px; }
+  .quarter-break-label { font-size: 0.92rem; }
 }
