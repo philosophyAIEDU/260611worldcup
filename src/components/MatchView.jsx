@@ -34,6 +34,7 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const [chatPlayer, setChatPlayer] = useState(null);
   const [sfxOn, setSfx] = useState(isSfxOn());
   const [quarterMsg, setQuarterMsg] = useState(null); // { q, text }
+  const [quarterPause, setQuarterPause] = useState(null); // 쿼터 종료 시 일시정지 { q, endMin }
   const quartersFired = useRef(new Set());
   const [dangerAlert, setDangerAlert] = useState(null);
   const recentGoalsRef = useRef({ home: 0, away: 0, lastMin: 0 });
@@ -73,17 +74,22 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   }, [done, sfxOn]);
 
   useEffect(() => {
-    if (done || paused || benchOpen) return undefined;
+    if (done || paused || benchOpen || quarterPause) return undefined;
     const iv = setInterval(() => {
       m.advance();
       force((x) => x + 1);
-      // 쿼터 종료 AI 분석 (Q1=23', Q2=45', Q3=68', Q4=90')
+      // 쿼터 종료: 자동 일시정지 (Q1=23', Q2=45', Q3=68') + AI 분석
+      // Q4(90')는 자연스럽게 경기 종료이므로 일시정지 없음
+      const QUARTER_PAUSE_MINS = { 1: 23, 2: 45, 3: 68 }; // Q4(90')는 경기 종료
       const QUARTER_MINS = { 1: 23, 2: 45, 3: 68, 4: 90 };
-      if (mine) {
-        const key = getApiKey();
-        if (key) {
-          for (const [q, endMin] of Object.entries(QUARTER_MINS)) {
-            if (m.minute === endMin && !quartersFired.current.has(q)) {
+      for (const [q, endMin] of Object.entries(QUARTER_PAUSE_MINS)) {
+        if (m.minute === endMin && !quartersFired.current.has(q)) {
+          // 쿼터 종료 자동 일시정지
+          setQuarterPause({ q: Number(q), endMin });
+          // AI 분석 (API 키 있을 때)
+          if (mine) {
+            const key = getApiKey();
+            if (key) {
               quartersFired.current.add(q);
               const myGoals = mySide === 'home' ? m.hg : m.ag;
               const oppGoals = mySide === 'home' ? m.ag : m.hg;
@@ -93,13 +99,31 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               const ctx = en
                 ? `You are a football AI coach. ${qLabel}. Score: ${myGoals}-${oppGoals} vs ${opp.nameEn || opp.name}. Formation: ${mine.formation}, mentality: ${mentalityLabel(mine.mentality,'en')}, subs used: ${mine.subsUsed}/${MAX_SUBS}. Give 2 sharp tactical tips for the next quarter in plain text, max 55 words.`
                 : `당신은 축구 AI 코치다. ${qLabel}. 스코어 ${myGoals}-${oppGoals} (상대: ${opp.name}). 포메이션: ${mine.formation}, 성향: ${mentalityLabel(mine.mentality,'ko')}, 교체 ${mine.subsUsed}/${MAX_SUBS}. 다음 쿼터 전술 조언 2가지를 간결한 한국어로.`;
-              const qNum = Number(q);
               askCoach(key, ctx, [{ role: 'user', text: en ? `Q${q} advice?` : `${q}쿼터 조언?` }])
-                .then((msg) => setQuarterMsg({ q: qNum, text: msg }))
+                .then((msg) => setQuarterMsg({ q: Number(q), text: msg }))
                 .catch(() => {});
-              break;
+            } else {
+              quartersFired.current.add(q);
             }
           }
+          break;
+        }
+      }
+      // Q4 AI 분석 (90분, 일시정지 없이)
+      if (m.minute === 90 && !quartersFired.current.has('4') && mine) {
+        const key = getApiKey();
+        if (key) {
+          quartersFired.current.add('4');
+          const myGoals = mySide === 'home' ? m.hg : m.ag;
+          const oppGoals = mySide === 'home' ? m.ag : m.hg;
+          const opp = mySide === 'home' ? TEAMS[m.awayTeam.code] : TEAMS[m.homeTeam.code];
+          const en = lang === 'en';
+          const ctx = en
+            ? `You are a football AI coach. Q4 end (90'). Final score: ${myGoals}-${oppGoals} vs ${opp.nameEn || opp.name}. Subs used: ${mine.subsUsed}/${MAX_SUBS}. Give a brief 2-sentence post-match tactical review. Plain text, max 40 words.`
+            : `당신은 축구 AI 코치다. 4쿼터 종료(90분). 최종 스코어 ${myGoals}-${oppGoals} (상대: ${opp.name}). 교체 ${mine.subsUsed}/${MAX_SUBS}. 경기 마무리 전술 평가 2문장으로.`;
+          askCoach(key, ctx, [{ role: 'user', text: en ? 'Q4 review?' : '4쿼터 평가?' }])
+            .then((msg) => setQuarterMsg({ q: 4, text: msg }))
+            .catch(() => {});
         }
       }
       // 위기 감지: 상대가 최근 10분 이내에 2골 이상 → 위기 경보
@@ -150,7 +174,7 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
       }
     }, speed === 1 ? 220 : 70);
     return () => clearInterval(iv);
-  }, [done, paused, benchOpen, speed, m, lang, mine, mySide]);
+  }, [done, paused, benchOpen, quarterPause, speed, m, lang, mine, mySide]);
 
   // 경기 종료 후 AI 총평 + MVP 인터뷰 자동 생성
   useEffect(() => {
@@ -365,6 +389,17 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           ))}
         </div>
 
+        {quarterPause && !done && (
+          <div className="quarter-break-banner">
+            <span className="quarter-break-label">
+              ⏸ {lang === 'en' ? `Q${quarterPause.q} ended (${quarterPause.endMin}')` : `${quarterPause.q}쿼터 종료 (${quarterPause.endMin}분)`}
+            </span>
+            <button className="btn big" onClick={() => setQuarterPause(null)}>
+              {lang === 'en' ? `▶ Start Q${quarterPause.q + 1}` : `▶ ${quarterPause.q + 1}쿼터 시작`}
+            </button>
+          </div>
+        )}
+
         <div className="match-actions">
           <button
             className="btn ghost"
@@ -373,7 +408,7 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
           >
             {t(sfxOn ? 'match.sfxOn' : 'match.sfxOff')}
           </button>
-          {!done && (
+          {!done && !quarterPause && (
             <>
               <button className="btn ghost" onClick={() => setPaused((p) => !p)}>
                 {paused ? t('match.resume') : t('match.pause')}

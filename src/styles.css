@@ -290,6 +290,15 @@ tr.qualified td:first-child { border-left: 4px solid var(--green); }
 }
 .feed .ev.shootout .min { background: var(--gold); }
 
+/* ── 쿼터 브레이크 배너 ──────────────────────── */
+.quarter-break-banner {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #1a2e1a 0%, #1e3a1e 100%);
+  border: 2px solid var(--green); border-radius: 14px;
+  padding: 16px 14px; margin: 10px 0;
+}
+.quarter-break-label { font-size: 1.05rem; font-weight: 800; color: #4cd97c; letter-spacing: 0.04em; }
+
 .match-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
 /* ── 라인업 / 작전 지시 ──────────────────────── */
