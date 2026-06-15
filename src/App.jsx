@@ -78,6 +78,8 @@ export default function App() {
   const competition = COMPETITIONS[activeComp];
   const groups = competition.groups;
   const format = competition.format;
+  // 경기 진행 구조: 챔피언스리그는 전·후반, 월드컵은 4쿼터
+  const matchStructure = activeComp === 'ucl' ? 'halves' : 'quarters';
 
   useEffect(() => {
     if (comp) setHasSave(!!loadGame(comp));
@@ -107,7 +109,7 @@ export default function App() {
   };
 
   const kickoff = (setup) => {
-    const opts = { knockout: pending.knockout, lang };
+    const opts = { knockout: pending.knockout, lang, structure: matchStructure };
     opts[`${pending.mySide}Setup`] = {
       ...setup,
       conditions: pending.myConditions,
@@ -316,6 +318,7 @@ export default function App() {
           match={liveMatch}
           mySide={pending?.mySide}
           roundLabel={pending?.label || ''}
+          structure={matchStructure}
           onFinish={game.phase === 'group' ? finishGroupMatch : finishKoMatch}
         />
       )}

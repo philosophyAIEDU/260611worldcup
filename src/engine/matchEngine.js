@@ -181,6 +181,8 @@ const pickOutfielder = (side) => pick(side.eleven.filter((p) => p.position !== '
 // setup: { conditions, lineup, formation, mentality, manual }
 export function createMatch(homeTeam, awayTeam, opts = {}) {
   const lang = opts.lang || 'ko';
+  // 진행 구조: 'quarters'(월드컵 4쿼터) | 'halves'(챔피언스리그 전·후반)
+  const structure = opts.structure || 'quarters';
   const nm = (p) => playerName(p, lang);
   const tnm = (t) => teamName(t, lang);
   const home = buildSide(homeTeam, opts.homeSetup);
@@ -277,17 +279,26 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
   m.advance = () => {
     if (m.finished) return [];
     const out = [];
-    if (m.minute === 0) push(out, 0, 'info', null, miscText('kickoff', {}, lang));
+    if (m.minute === 0) push(out, 0, 'info', null, miscText(structure === 'halves' ? 'kickoffHalf' : 'kickoff', {}, lang));
     m.minute++;
-    // 4쿼터 진행: Q1 1-23, Q2 24-45(하프타임), Q3 46-68, Q4 69-90
-    if (m.minute === 24) push(out, 24, 'info', null, miscText('q2Start', {}, lang));
-    if (m.minute === 46) push(out, 46, 'info', null, miscText('q3Start', {}, lang));
-    if (m.minute === 69) push(out, 69, 'info', null, miscText('q4Start', {}, lang));
+    if (structure === 'halves') {
+      // 전·후반: 전반 1-45, 후반 46-90
+      if (m.minute === 46) push(out, 46, 'info', null, miscText('secondHalfStart', {}, lang));
+    } else {
+      // 4쿼터 진행: Q1 1-23, Q2 24-45(하프타임), Q3 46-68, Q4 69-90
+      if (m.minute === 24) push(out, 24, 'info', null, miscText('q2Start', {}, lang));
+      if (m.minute === 46) push(out, 46, 'info', null, miscText('q3Start', {}, lang));
+      if (m.minute === 69) push(out, 69, 'info', null, miscText('q4Start', {}, lang));
+    }
     simMinute(m.minute, out);
 
-    if (m.minute === 23) push(out, 23, 'info', null, miscText('q1End', {}, lang));
-    if (m.minute === 45) push(out, 45, 'info', null, miscText('q2End', {}, lang));
-    if (m.minute === 68) push(out, 68, 'info', null, miscText('q3End', {}, lang));
+    if (structure === 'halves') {
+      if (m.minute === 45) push(out, 45, 'info', null, miscText('halftime', {}, lang));
+    } else {
+      if (m.minute === 23) push(out, 23, 'info', null, miscText('q1End', {}, lang));
+      if (m.minute === 45) push(out, 45, 'info', null, miscText('q2End', {}, lang));
+      if (m.minute === 68) push(out, 68, 'info', null, miscText('q3End', {}, lang));
+    }
     if (m.minute === 90) {
       if (!m.knockout || m.hg !== m.ag) {
         push(out, 90, 'end', null, miscText('fulltime', {}, lang));

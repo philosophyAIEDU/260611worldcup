@@ -37,6 +37,15 @@ h3 { font-size: 1.02rem; }
   box-shadow: 0 0 0 1px rgba(13, 34, 64, 0.25);
 }
 
+/* 경기 속도 · 휴식 설정 행 */
+.match-settings {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  margin: 12px 0 4px; padding: 8px 10px;
+  background: rgba(13, 34, 64, 0.04); border-radius: 10px;
+}
+.match-settings .ms-label { font-weight: 800; font-size: 0.82rem; color: var(--dim); margin-right: 2px; }
+.match-settings .ms-sep { flex: 1 1 8px; min-width: 8px; }
+
 /* 챔피언스리그 클럽 크레스트 (클럽 색상 + 모노그램) */
 .club-crest {
   display: inline-flex; align-items: center; justify-content: center;
