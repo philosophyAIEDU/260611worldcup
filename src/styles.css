@@ -37,6 +37,18 @@ h3 { font-size: 1.02rem; }
   box-shadow: 0 0 0 1px rgba(13, 34, 64, 0.25);
 }
 
+/* 챔피언스리그 클럽 크레스트 (클럽 색상 + 모노그램) */
+.club-crest {
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: -0.28em;
+  border-radius: 28% 28% 36% 36% / 24% 24% 44% 44%; /* 방패형 */
+  border: 1.5px solid;
+  font-weight: 900; letter-spacing: -0.3px; line-height: 1;
+  font-family: 'Arial Narrow', system-ui, sans-serif;
+  box-shadow: 0 0 0 1px rgba(13, 34, 64, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  overflow: hidden; flex: 0 0 auto;
+}
+
 /* ── 상단바 (스타디움 헤더) ───────────────────── */
 .topbar {
   display: flex; justify-content: space-between; align-items: center;

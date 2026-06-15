@@ -115,5 +115,44 @@ function buildClub(def) {
 export const CLUB_LIST = CLUB_DEFS.map(buildClub);
 export const CLUBS = Object.fromEntries(CLUB_LIST.map((c) => [c.code, c]));
 
-// 클럽 코드 → 국가 ISO (국기 표시용)
+// 클럽 코드 → 국가 ISO (리그 그룹 분류용)
 export const CLUB_ISO = Object.fromEntries(CLUB_DEFS.map((d) => [d[0], d[3]]));
+
+// 클럽 코드 → 크레스트(엠블럼) 스타일. 실제 클럽 로고는 저작권 + 오프라인 제약으로
+// 사용하지 않고, 각 클럽 고유 색상 + 모노그램으로 클럽 전용 마크를 렌더한다.
+// { bg: 배경, fg: 글자, accent: 테두리/포인트, abbr: 모노그램 }
+export const CLUB_CREST = {
+  RMA: { bg: '#FFFFFF', fg: '#00529F', accent: '#FEBE10', abbr: 'RM' },
+  MCI: { bg: '#6CABDD', fg: '#FFFFFF', accent: '#1C2C5B', abbr: 'MC' },
+  PSG: { bg: '#004170', fg: '#FFFFFF', accent: '#DA291C', abbr: 'PSG' },
+  FCB: { bg: '#A50044', fg: '#FFED02', accent: '#004D98', abbr: 'FCB' },
+  BAY: { bg: '#DC052D', fg: '#FFFFFF', accent: '#0066B2', abbr: 'FCB' },
+  ARS: { bg: '#EF0107', fg: '#FFFFFF', accent: '#063672', abbr: 'ARS' },
+  LIV: { bg: '#C8102E', fg: '#FFFFFF', accent: '#00B2A9', abbr: 'LFC' },
+  INT: { bg: '#0A0A64', fg: '#FFFFFF', accent: '#000000', abbr: 'INT' },
+  CHE: { bg: '#034694', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'CFC' },
+  NAP: { bg: '#12A0D7', fg: '#FFFFFF', accent: '#003C82', abbr: 'NAP' },
+  ATM: { bg: '#CB3524', fg: '#FFFFFF', accent: '#1C2C5B', abbr: 'ATM' },
+  MIL: { bg: '#FB090B', fg: '#FFFFFF', accent: '#000000', abbr: 'ACM' },
+  JUV: { bg: '#101010', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'JUV' },
+  BVB: { bg: '#FDE100', fg: '#000000', accent: '#000000', abbr: 'BVB' },
+  LEV: { bg: '#E32219', fg: '#FFFFFF', accent: '#000000', abbr: 'B04' },
+  TOT: { bg: '#FFFFFF', fg: '#132257', accent: '#132257', abbr: 'TOT' },
+  ATA: { bg: '#1D71B8', fg: '#FFFFFF', accent: '#000000', abbr: 'ATA' },
+  NEW: { bg: '#241F20', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'NEW' },
+  AVL: { bg: '#670E36', fg: '#95BFE5', accent: '#95BFE5', abbr: 'AVL' },
+  OM: { bg: '#FFFFFF', fg: '#2FAEE0', accent: '#2FAEE0', abbr: 'OM' },
+  RBL: { bg: '#FFFFFF', fg: '#DD0741', accent: '#001F47', abbr: 'RBL' },
+  SPO: { bg: '#008057', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'SCP' },
+  BEN: { bg: '#E40521', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'SLB' },
+  GAL: { bg: '#A90432', fg: '#FBB30F', accent: '#FBB30F', abbr: 'GS' },
+  ATH: { bg: '#EE2523', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'ATH' },
+  MON: { bg: '#E63312', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'ASM' },
+  FCP: { bg: '#00428C', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'FCP' },
+  PSV: { bg: '#ED1C24', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'PSV' },
+  FEY: { bg: '#E30613', fg: '#FFFFFF', accent: '#000000', abbr: 'FEY' },
+  AJA: { bg: '#FFFFFF', fg: '#D2122E', accent: '#D2122E', abbr: 'AJX' },
+  CEL: { bg: '#018749', fg: '#FFFFFF', accent: '#FFFFFF', abbr: 'CEL' },
+  BRU: { bg: '#0A203F', fg: '#1B86C6', accent: '#1B86C6', abbr: 'CB' },
+};
+
