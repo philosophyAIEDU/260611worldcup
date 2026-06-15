@@ -48,6 +48,9 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
 
   const m = matchRef.current;
   const done = m.finished;
+  const home = TEAMS[m.homeTeam.code];
+  const away = TEAMS[m.awayTeam.code];
+  const mine = mySide ? m[mySide] : null;
 
   // 새로 생긴 경기 이벤트마다 효과음 재생. 대량 추가(결과 바로 보기/승부차기)는 휘슬만.
   useEffect(() => {
@@ -196,9 +199,6 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
     force((x) => x + 1);
   };
 
-  const home = TEAMS[m.homeTeam.code];
-  const away = TEAMS[m.awayTeam.code];
-  const mine = mySide ? m[mySide] : null;
   const result = done ? m.result() : null;
 
   const doSub = (inName) => {
