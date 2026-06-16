@@ -373,8 +373,8 @@ const STRINGS = {
   // 주장
   'lineup.captain': { ko: '주장 (C)', en: 'Captain (C)' },
   'lineup.captainHint': {
-    ko: '주장은 컨디션 +6%, 팀 전체에 리더십 +2% 보너스를 줍니다.',
-    en: 'The captain gets +6% condition and gives the whole team +2% leadership.',
+    ko: '주장은 컨디션 +2%, 팀 전체에 리더십 +1% 보너스를 줍니다.',
+    en: 'The captain gets +2% condition and gives the whole team +1% leadership.',
   },
 
   // 경기 속도 / 쿼터 휴식

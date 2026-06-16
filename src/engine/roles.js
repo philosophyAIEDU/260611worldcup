@@ -7,33 +7,33 @@
 export const ROLES = {
   allrounder: {
     icon: '🎯',
-    ko: { name: '균형의 명장', desc: '모든 선수의 컨디션을 고르게 +3%' },
-    en: { name: 'All-Rounder', desc: '+3% condition to every player' },
-    effect: () => 0.03,
+    ko: { name: '균형의 명장', desc: '모든 선수의 컨디션을 고르게 +2%' },
+    en: { name: 'All-Rounder', desc: '+2% condition to every player' },
+    effect: () => 0.02,
   },
   motivator: {
     icon: '🔥',
-    ko: { name: '동기부여가', desc: '선발 전원 컨디션 +5%, 팀 토크 효과 강화' },
-    en: { name: 'Motivator', desc: '+5% to all starters, stronger team talks' },
-    effect: () => 0.05,
+    ko: { name: '동기부여가', desc: '선발 전원 컨디션 +3%, 팀 토크 효과 강화' },
+    en: { name: 'Motivator', desc: '+3% to all starters, stronger team talks' },
+    effect: () => 0.03,
   },
   starcoach: {
     icon: '⭐',
-    ko: { name: '스타 조련사', desc: '스타 플레이어 컨디션 +10% (이변 유발에 강함)' },
-    en: { name: 'Star Maker', desc: '+10% to star players (great for upsets)' },
-    effect: (p) => (p.isStar ? 0.1 : 0.01),
+    ko: { name: '스타 조련사', desc: '스타 플레이어 컨디션 +4% (이변 유발에 강함)' },
+    en: { name: 'Star Maker', desc: '+4% to star players (great for upsets)' },
+    effect: (p) => (p.isStar ? 0.04 : 0.005),
   },
   defmaster: {
     icon: '🛡️',
-    ko: { name: '철벽 수비 전문가', desc: 'GK·수비수 컨디션 +8%' },
-    en: { name: 'Defensive Master', desc: '+8% to GK & defenders' },
-    effect: (p) => (p.position === 'GK' || p.position === 'DF' ? 0.08 : 0.01),
+    ko: { name: '철벽 수비 전문가', desc: 'GK·수비수 컨디션 +3%' },
+    en: { name: 'Defensive Master', desc: '+3% to GK & defenders' },
+    effect: (p) => (p.position === 'GK' || p.position === 'DF' ? 0.03 : 0.005),
   },
   atkmaster: {
     icon: '⚡',
-    ko: { name: '공격 축구 전문가', desc: '공격수·미드필더 컨디션 +7%' },
-    en: { name: 'Attacking Master', desc: '+7% to forwards & midfielders' },
-    effect: (p) => (p.position === 'FW' || p.position === 'MF' ? 0.07 : 0.01),
+    ko: { name: '공격 축구 전문가', desc: '공격수·미드필더 컨디션 +3%' },
+    en: { name: 'Attacking Master', desc: '+3% to forwards & midfielders' },
+    effect: (p) => (p.position === 'FW' || p.position === 'MF' ? 0.03 : 0.005),
   },
 };
 
@@ -55,27 +55,27 @@ export const TEAM_TALKS = {
   },
   fire: {
     icon: '🔥',
-    ko: { name: '열정적 격려', desc: '선발 전원 컨디션 +5%' },
-    en: { name: 'Fire them up', desc: '+5% to all starters' },
-    effect: () => 0.05,
+    ko: { name: '열정적 격려', desc: '선발 전원 컨디션 +3%' },
+    en: { name: 'Fire them up', desc: '+3% to all starters' },
+    effect: () => 0.03,
   },
   calm: {
     icon: '🧊',
-    ko: { name: '침착하게', desc: '전원 +2%, 안정적인 출발' },
-    en: { name: 'Stay calm', desc: '+2% to all, steady start' },
-    effect: () => 0.02,
+    ko: { name: '침착하게', desc: '전원 +1%, 안정적인 출발' },
+    en: { name: 'Stay calm', desc: '+1% to all, steady start' },
+    effect: () => 0.01,
   },
   demand: {
     icon: '😤',
-    ko: { name: '강하게 질책', desc: '컨디션 낮은 선수 분발(+8%), 이미 좋은 선수는 부담(-3%)' },
-    en: { name: 'Demand more', desc: 'Tired players +8%, in-form players -3%' },
-    effect: (p) => (p.condition < 0.8 ? 0.08 : p.condition >= 0.9 ? -0.03 : 0),
+    ko: { name: '강하게 질책', desc: '컨디션 낮은 선수 분발(+3%), 이미 좋은 선수는 부담(-2%)' },
+    en: { name: 'Demand more', desc: 'Tired players +3%, in-form players -2%' },
+    effect: (p) => (p.condition < 0.8 ? 0.03 : p.condition >= 0.9 ? -0.02 : 0),
   },
   focus: {
     icon: '🎯',
-    ko: { name: '전술 집중', desc: '미드필더 +5%, 수비수 +3% (경기 장악)' },
-    en: { name: 'Tactical focus', desc: 'Midfielders +5%, defenders +3%' },
-    effect: (p) => (p.position === 'MF' ? 0.05 : p.position === 'DF' ? 0.03 : 0),
+    ko: { name: '전술 집중', desc: '미드필더 +2%, 수비수 +1% (경기 장악)' },
+    en: { name: 'Tactical focus', desc: 'Midfielders +2%, defenders +1%' },
+    effect: (p) => (p.position === 'MF' ? 0.02 : p.position === 'DF' ? 0.01 : 0),
   },
 };
 
@@ -99,8 +99,8 @@ export function applyModifiers(baseConditions, starters, { role, teamTalk, capta
     // 팀 토크 effect는 현재 컨디션을 참조하므로 base를 주입한 객체로 평가
     const pForTalk = { ...p, condition: base };
     let cond = base + roleDef.effect(p) + talkDef.effect(pForTalk) * talkBoost;
-    if (captain && p.name === captain) cond += 0.06; // 주장 본인
-    if (captain) cond += 0.02; // 주장 리더십(팀 전체)
+    if (captain && p.name === captain) cond += 0.02; // 주장 본인
+    if (captain) cond += 0.01; // 주장 리더십(팀 전체)
     result[p.name] = clamp(cond);
   }
   return result;
