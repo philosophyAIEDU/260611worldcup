@@ -586,7 +586,9 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               <div className="p-list">
                 {mine.bench.map((p) => {
                   const pickedP = pickedOut ? mine.eleven.find((x) => x.name === pickedOut) : null;
-                  const dimmed = mine.subsUsed >= MAX_SUBS || (pickedP && p.position !== pickedP.position);
+                  // GK는 GK끼리만 교체 가능, 필드 선수는 포지션 무관하게 교체 가능
+                  const incompatible = pickedP && ((pickedP.position === 'GK') !== (p.position === 'GK'));
+                  const dimmed = mine.subsUsed >= MAX_SUBS || incompatible;
                   return (
                     <div className={`p-row-wrap ${dimmed ? 'dimmed' : ''}`} key={p.name}>
                       <button
