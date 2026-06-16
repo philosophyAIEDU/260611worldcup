@@ -107,7 +107,7 @@ export function autoLineup(squad, formation) {
 
 function buildSide(team, setup = {}) {
   const conditions = setup.conditions || rollConditions(team);
-  const squad = team.players.map((p) => ({ ...p, condition: conditions[p.name] ?? 0.85 }));
+  const squad = team.players.map((p) => ({ ...p, basePosition: p.position, condition: conditions[p.name] ?? 0.85 }));
   const formation = setup.formation || pick(['4-3-3', '4-4-2', '4-2-3-1', '4-2-3-1', '3-5-2', '4-1-4-1', '3-4-3']);
   const lineupNames = setup.lineup || autoLineup(squad, formation);
   const eleven = lineupNames.map((n) => squad.find((p) => p.name === n)).filter(Boolean);
@@ -138,6 +138,29 @@ function recalcStrength(side) {
   else if (hotStar && hotStar.condition >= 0.82) strength += 1.5;
   side.hotStar = hotStar;
   side.strength = strength + side.upsetBonus;
+}
+
+// 포메이션 변경 시 현재 11명을 그대로 둔 채, 새 포메이션의 형태(DF/MF/FW 수)에
+// 맞춰 필드 포지션만 재배치한다. 선수의 자연 포지션(basePosition) 성향을 존중해
+// 공격적인 선수를 앞선, 수비적인 선수를 뒷선에 배치한다(같은 11명, 역할만 변경).
+function reshapeToFormation(side) {
+  const f = FORMATIONS[side.formation];
+  if (!f) return;
+  const gk = side.eleven.find((p) => p.basePosition === 'GK') || side.eleven.find((p) => p.position === 'GK');
+  const outs = side.eleven.filter((p) => p !== gk);
+  const tend = { FW: 3, MF: 2, DF: 1, GK: 0 };
+  // 공격 성향 내림차순(동률이면 슈팅 능력 높은 선수를 앞선으로)
+  outs.sort((a, b) => (tend[b.basePosition] - tend[a.basePosition]) || (b.shooting - a.shooting));
+  outs.forEach((p, i) => {
+    if (i < f.FW) p.position = 'FW';
+    else if (i >= outs.length - f.DF) p.position = 'DF';
+    else p.position = 'MF';
+  });
+  if (gk) gk.position = 'GK';
+  // 표시 일관성을 위해 GK→DF→MF→FW 순으로 정렬(GK가 eleven[0]를 유지해야 함)
+  const order = { GK: 0, DF: 1, MF: 2, FW: 3 };
+  side.eleven.sort((a, b) => order[a.position] - order[b.position]);
+  recalcStrength(side);
 }
 
 // 업셋 메커니즘: 랭킹 20위 이상 차이 + 약팀 스타 컨디션 0.90 이상 → 약팀 전력 보정
@@ -264,6 +287,7 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
   };
 
   const doSub = (sd, outP, inP, minute, out) => {
+    inP.position = outP.position; // 들어오는 선수가 나가는 선수의 필드 역할을 맡는다
     sd.eleven[sd.eleven.indexOf(outP)] = inP;
     sd.bench.splice(sd.bench.indexOf(inP), 1);
     sd.bench.push(outP);
@@ -310,13 +334,16 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     return out;
   };
 
-  // 사용자 교체. 성공 시 true.
+  // 사용자 교체. 성공 시 이벤트 배열, 실패 시 false.
+  // GK는 GK끼리만 교체 가능. 필드 선수는 포지션에 상관없이 교체할 수 있고,
+  // 들어오는 선수는 나가는 선수의 필드 포지션(역할)을 그대로 맡는다.
   m.makeSub = (sideKey, outName, inName) => {
     const sd = sideKey === 'home' ? home : away;
     if (sd.subsUsed >= MAX_SUBS || m.finished) return false;
     const outP = sd.eleven.find((p) => p.name === outName);
     const inP = sd.bench.find((p) => p.name === inName);
-    if (!outP || !inP || outP.position !== inP.position) return false;
+    if (!outP || !inP) return false;
+    if ((outP.basePosition === 'GK') !== (inP.basePosition === 'GK')) return false;
     const out = [];
     doSub(sd, outP, inP, Math.max(1, m.minute), out);
     return out;
@@ -332,12 +359,12 @@ export function createMatch(homeTeam, awayTeam, opts = {}) {
     if (PLAYSTYLES[playstyle]) sd.playstyle = playstyle;
   };
 
-  // 경기 중 포메이션(전술 형태) 변경 — 같은 11명으로 공/수 균형만 바뀐다.
+  // 경기 중 포메이션(전술 형태) 변경 — 같은 11명을 새 형태에 맞게 재배치한다.
   m.setFormation = (sideKey, formation) => {
     const sd = sideKey === 'home' ? home : away;
     if (FORMATIONS[formation]) {
       sd.formation = formation;
-      recalcStrength(sd);
+      reshapeToFormation(sd);
     }
   };
 

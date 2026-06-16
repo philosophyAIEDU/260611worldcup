@@ -219,8 +219,8 @@ const STRINGS = {
   'match.close': { ko: '닫기 ✕ (경기 재개)', en: 'Close ✕ (resume)' },
   'match.subsUsed': { ko: ({ a, b }) => `교체 ${a}/${b}`, en: ({ a, b }) => `Subs ${a}/${b}` },
   'match.opsHintPicked': {
-    ko: ({ p }) => `${p} → 벤치의 동일 포지션 선수를 선택하면 교체됩니다.`,
-    en: ({ p }) => `${p} → pick a same-position bench player to sub.`,
+    ko: ({ p }) => `${p} → 교체로 투입할 벤치 선수를 선택하세요 (들어온 선수가 그 자리를 맡습니다. GK는 GK끼리).`,
+    en: ({ p }) => `${p} → pick any bench player to bring on (they take that role; GK for GK only).`,
   },
   'match.opsHintDefault': {
     ko: '빼고 싶은 필드 위 선수를 먼저 선택하세요.',
