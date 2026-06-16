@@ -8,6 +8,7 @@ import CoachChat from './CoachChat.jsx';
 import PlayerChat from './PlayerChat.jsx';
 import { isSfxOn, setSfxOn, playEventSound, playFinalWhistle, startAmbience, stopAmbience } from '../engine/sfx.js';
 import { askCoach, getApiKey } from '../engine/aiCoach.js';
+import { SPEEDS, speedInterval, getSpeed, setSpeed as storeSpeed, getQuarterRest, setQuarterRest as storeQuarterRest } from '../engine/settings.js';
 
 function condClass(c) {
   if (c >= 0.9) return 'cond-hot';
@@ -27,7 +28,8 @@ function quarterOf(minute) {
 export default function MatchView({ match, mySide, roundLabel, onFinish }) {
   const { t, tn, pn, lang } = useLang();
   const [, force] = useState(0);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(() => getSpeed());
+  const [quarterRest, setQuarterRest] = useState(() => getQuarterRest());
   const [paused, setPaused] = useState(false);
   const [benchOpen, setBenchOpen] = useState(false);
   const [pickedOut, setPickedOut] = useState(null);
@@ -84,10 +86,12 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
       const QUARTER_MINS = { 1: 23, 2: 45, 3: 68, 4: 90 };
       for (const [q, endMin] of Object.entries(QUARTER_PAUSE_MINS)) {
         if (m.minute === endMin && !quartersFired.current.has(q)) {
-          // 쿼터 종료 자동 일시정지 + 작전 패널 자동 오픈
-          setQuarterPause({ q: Number(q), endMin });
-          if (mine) setBenchOpen(true);
-          // AI 분석 (API 키 있을 때)
+          // 쿼터 종료 자동 일시정지 + 작전 패널 자동 오픈 (휴식 설정이 켜져 있을 때만)
+          if (quarterRest) {
+            setQuarterPause({ q: Number(q), endMin });
+            if (mine) setBenchOpen(true);
+          }
+          // AI 분석 (API 키 있을 때) — 휴식 여부와 무관하게 제공
           if (mine) {
             const key = getApiKey();
             if (key) {
@@ -173,9 +177,9 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
             .catch(() => {});
         }
       }
-    }, speed === 1 ? 220 : 70);
+    }, speedInterval(speed));
     return () => clearInterval(iv);
-  }, [done, paused, benchOpen, quarterPause, speed, m, lang, mine, mySide]);
+  }, [done, paused, benchOpen, quarterPause, speed, quarterRest, m, lang, mine, mySide]);
 
   // 경기 종료 후 AI 총평 + MVP 인터뷰 자동 생성
   useEffect(() => {
@@ -391,6 +395,21 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
         </div>
 
 
+        {!done && !quarterPause && (
+          <div className="speed-row">
+            <span className="speed-label">{t('speed.label')}</span>
+            {SPEEDS.map((s) => (
+              <button
+                key={s.id}
+                className={`chip ${speed === s.id ? 'active' : ''}`}
+                onClick={() => { setSpeed(s.id); storeSpeed(s.id); setPaused(false); }}
+              >
+                {t(`speed.${s.id}`)}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="match-actions">
           <button
             className="btn ghost"
@@ -404,8 +423,12 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
               <button className="btn ghost" onClick={() => setPaused((p) => !p)}>
                 {paused ? t('match.resume') : t('match.pause')}
               </button>
-              <button className="btn ghost" onClick={() => setSpeed(speed === 1 ? 3 : 1)}>
-                {speed === 1 ? t('match.fast') : t('match.normal')}
+              <button
+                className="btn ghost"
+                onClick={() => { const v = !quarterRest; setQuarterRest(v); storeQuarterRest(v); }}
+                title={t(quarterRest ? 'match.restOn' : 'match.restOff')}
+              >
+                {t(quarterRest ? 'match.restOn' : 'match.restOff')}
               </button>
               {mine && (
                 <button className="btn" onClick={() => setBenchOpen(true)}>
@@ -601,6 +624,12 @@ export default function MatchView({ match, mySide, roundLabel, onFinish }) {
                 onClick={() => { setQuarterPause(null); setBenchOpen(false); setPickedOut(null); }}
               >
                 {lang === 'en' ? `▶ Start Q${quarterPause.q + 1}` : `▶ ${quarterPause.q + 1}쿼터 시작`}
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => { setQuarterRest(false); storeQuarterRest(false); setQuarterPause(null); setBenchOpen(false); setPickedOut(null); }}
+              >
+                {t('match.skipBreaks')}
               </button>
             </div>
           )}
