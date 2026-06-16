@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TEAMS } from '../data/teams/index.js';
 import { FORMATIONS, MENTALITIES, PLAYSTYLES, autoLineup, defaultPlaystyle } from '../engine/matchEngine.js';
 import { formationLabel, mentalityLabel, playstyleLabel, posLabel } from '../engine/labels.js';
+import { TEAM_TALKS, applyModifiers, DEFAULT_ROLE } from '../engine/roles.js';
 import { useLang } from '../i18n.jsx';
 import Flag from './Flag.jsx';
 import CoachChat from './CoachChat.jsx';
@@ -16,7 +17,7 @@ function condClass(c) {
   return 'cond-low';
 }
 
-function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle, starters }) {
+function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle, starters, isCaptain }) {
   return (
     <div className={`p-row-wrap ${dimmed ? 'dimmed' : ''}`}>
       <button
@@ -27,6 +28,7 @@ function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle, star
         <span className={`pos-chip pos-${p.position}`}>{starters ? posLabel(p, starters) : p.position}</span>
         <span className="p-name">
           {name}
+          {isCaptain && <span className="captain-badge"> Ⓒ</span>}
           {p.isStar && <span className="star"> ★</span>}
           {p.isLegend && ' 👑'}
         </span>
@@ -41,7 +43,7 @@ function PlayerRow({ p, name, selected, dimmed, onClick, onChat, talkTitle, star
 // 경기 전 감독 화면: 선발 11명, 포메이션, 전술 성향 결정 + AI 코치 상담
 export default function LineupScreen({ pending, onKickoff, onBack }) {
   const { t, tn, pn, lang } = useLang();
-  const { home, away, mySide, label, myConditions, knockout } = pending;
+  const { home, away, mySide, label, myConditions, knockout, role = DEFAULT_ROLE } = pending;
   const myTeam = TEAMS[mySide === 'home' ? home : away];
   const oppTeam = TEAMS[mySide === 'home' ? away : home];
 
@@ -53,16 +55,35 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
     [myTeam, myConditions]
   );
 
+  const bestCaptain = (names) => {
+    const players = names.map((n) => squad.find((p) => p.name === n)).filter(Boolean);
+    const star = players.find((p) => p.isStar);
+    return (star || players.slice().sort((a, b) => b.overall - a.overall)[0])?.name || '';
+  };
+
   const [formation, setFormation] = useState('4-3-3');
   const [mentality, setMentality] = useState('balanced');
   const [playstyle, setPlaystyle] = useState(() => defaultPlaystyle(myTeam.code));
   const [lineup, setLineup] = useState(() => autoLineup(squad, '4-3-3'));
+  const [teamTalk, setTeamTalk] = useState('none');
+  const [captain, setCaptain] = useState(() => bestCaptain(autoLineup(squad, '4-3-3')));
   const [picked, setPicked] = useState(null); // 교체 대상으로 선택된 선발 선수 이름
   const [chatPlayer, setChatPlayer] = useState(null); // 대화 중인 선수
   const [scoutReport, setScoutReport] = useState(null);
   const scoutFired = useRef(false);
 
-  const starters = lineup.map((n) => squad.find((p) => p.name === n));
+  // 주장이 선발에서 빠지면 자동으로 다른 주장 지정
+  useEffect(() => {
+    if (!lineup.includes(captain)) setCaptain(bestCaptain(lineup));
+  }, [lineup]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const rawStarters = lineup.map((n) => squad.find((p) => p.name === n));
+  // 역할 + 팀 토크 + 주장 보정을 적용한 선발 컨디션(화면·경기 모두 반영)
+  const effConditions = useMemo(
+    () => applyModifiers(myConditions, rawStarters, { role, teamTalk, captain }),
+    [myConditions, lineup, role, teamTalk, captain] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const starters = rawStarters.map((p) => ({ ...p, condition: effConditions[p.name] ?? p.condition }));
   const bench = squad.filter((p) => !lineup.includes(p.name));
   const pickedPlayer = picked ? squad.find((p) => p.name === picked) : null;
 
@@ -188,9 +209,36 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
             </button>
           ))}
         </div>
+        <div className="tactic-row">
+          <span className="tactic-title">{t('lineup.captain')}</span>
+          <select className="captain-select" value={captain} onChange={(e) => setCaptain(e.target.value)}>
+            {starters.map((p) => (
+              <option key={p.name} value={p.name}>{pn(p)} · {p.position} {p.overall}</option>
+            ))}
+          </select>
+          <span className="hint" style={{ marginTop: 0 }}>{t('lineup.captainHint')}</span>
+        </div>
         <p className="hint">
           {picked ? t('lineup.hintPicked', { p: pn(pickedPlayer) }) : t('lineup.hintDefault')}
         </p>
+      </div>
+
+      <div className="panel">
+        <h3>{t('talk.title')}</h3>
+        <p className="hint" style={{ marginTop: 0, marginBottom: 8 }}>{t('talk.hint')}</p>
+        <div className="talk-grid">
+          {Object.entries(TEAM_TALKS).map(([id, tk]) => (
+            <button
+              key={id}
+              className={`talk-card ${teamTalk === id ? 'active' : ''}`}
+              onClick={() => setTeamTalk(id)}
+            >
+              <span className="talk-icon">{tk.icon}</span>
+              <span className="talk-name">{tk[lang]?.name ?? tk.ko.name}</span>
+              <span className="talk-desc">{tk[lang]?.desc ?? tk.ko.desc}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid2">
@@ -204,6 +252,7 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
                 name={pn(p)}
                 selected={picked === p.name}
                 starters={starters}
+                isCaptain={p.name === captain}
                 talkTitle={t('player.talkTitle')}
                 onChat={() => setChatPlayer(p)}
                 onClick={() => setPicked(picked === p.name ? null : p.name)}
@@ -235,7 +284,10 @@ export default function LineupScreen({ pending, onKickoff, onBack }) {
 
       <div className="match-actions">
         <button className="btn ghost" onClick={onBack}>{t('common.back')}</button>
-        <button className="btn big" onClick={() => onKickoff({ lineup, formation, mentality, playstyle })}>
+        <button
+          className="btn big"
+          onClick={() => onKickoff({ lineup, formation, mentality, playstyle, captain, teamTalk, conditions: effConditions })}
+        >
           {t('lineup.kickoff')}
         </button>
       </div>

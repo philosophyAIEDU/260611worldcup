@@ -354,6 +354,38 @@ const STRINGS = {
     ko: 'Teach me 5 common live football commentary phrases in English, with what they mean and when commentators say them.',
     en: 'Teach me 5 common live football commentary phrases in English, with meanings and when commentators say them.',
   },
+
+  // 감독 역할 선택 화면
+  'role.title': { ko: '감독 역할을 선택하세요', en: 'Choose your manager role' },
+  'role.subtitle': {
+    ko: '역할에 따라 매 경기 선수들의 컨디션 보정이 달라집니다. 당신의 스타일을 골라 대회 전체에 적용하세요.',
+    en: 'Each role gives a different condition bonus to your players every match. Pick your style for the whole tournament.',
+  },
+  'role.badge': { ko: ({ name }) => `역할: ${name}`, en: ({ name }) => `Role: ${name}` },
+
+  // 팀 토크 (경기 전 동기부여)
+  'talk.title': { ko: '🎙️ 감독의 팀 토크', en: '🎙️ Team Talk' },
+  'talk.hint': {
+    ko: '킥오프 전 한마디로 선수단의 분위기를 끌어올리세요. 선택에 따라 선발진의 컨디션이 달라집니다.',
+    en: 'Lift the dressing room before kickoff. Your choice changes your starters\' condition.',
+  },
+
+  // 주장
+  'lineup.captain': { ko: '주장 (C)', en: 'Captain (C)' },
+  'lineup.captainHint': {
+    ko: '주장은 컨디션 +6%, 팀 전체에 리더십 +2% 보너스를 줍니다.',
+    en: 'The captain gets +6% condition and gives the whole team +2% leadership.',
+  },
+
+  // 경기 속도 / 쿼터 휴식
+  'speed.label': { ko: '속도', en: 'Speed' },
+  'speed.slow': { ko: '🐢 느리게', en: '🐢 Slow' },
+  'speed.normal': { ko: '▶ 보통', en: '▶ Normal' },
+  'speed.fast': { ko: '⏩ 빠르게', en: '⏩ Fast' },
+  'speed.turbo': { ko: '⚡ 매우 빠르게', en: '⚡ Turbo' },
+  'match.restOn': { ko: '⏸ 쿼터 휴식 ON', en: '⏸ Breaks ON' },
+  'match.restOff': { ko: '⏭ 쿼터 휴식 OFF', en: '⏭ Breaks OFF' },
+  'match.skipBreaks': { ko: '⏭ 이후 휴식 없이 진행', en: '⏭ Skip remaining breaks' },
 };
 
 function ord(n) {

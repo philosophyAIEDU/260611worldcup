@@ -10,6 +10,7 @@ import {
 } from './engine/tournament.js';
 import { createMatch, simulateMatch, rollConditions } from './engine/matchEngine.js';
 import { saveGame, loadGame, clearGame } from './engine/storage.js';
+import { ROLES, DEFAULT_ROLE, roleLabel } from './engine/roles.js';
 import { useLang, runSummaryText } from './i18n.jsx';
 import TeamSelect from './components/TeamSelect.jsx';
 import ClubSelect from './components/ClubSelect.jsx';
@@ -40,11 +41,12 @@ const strip = (r) => ({
   assisters: r.assisters || [],
 });
 
-const newGame = (myTeam, comp) => {
+const newGame = (myTeam, comp, role = DEFAULT_ROLE) => {
   const groupKeys = Object.keys(COMPETITIONS[comp].groups);
   return {
     comp,
     myTeam,
+    role,
     phase: 'group', // 'group' | 'ko' | 'done'
     matchday: 1,
     groupResults: Object.fromEntries(groupKeys.map((g) => [g, []])),
@@ -102,6 +104,7 @@ export default function App() {
       label,
       mySide: fix.home === game.myTeam ? 'home' : 'away',
       myConditions: rollConditions(TEAMS[game.myTeam]),
+      role: game.role || DEFAULT_ROLE,
     });
     setScreen('lineup');
   };
@@ -110,7 +113,7 @@ export default function App() {
     const opts = { knockout: pending.knockout, lang };
     opts[`${pending.mySide}Setup`] = {
       ...setup,
-      conditions: pending.myConditions,
+      conditions: setup.conditions || pending.myConditions,
       manual: true,
     };
     setLiveMatch(createMatch(TEAMS[pending.home], TEAMS[pending.away], opts));
@@ -299,8 +302,16 @@ export default function App() {
           rankKey={format.rankKey}
           confirmKey={competition.id === 'ucl' ? 'squad.confirmClub' : 'squad.confirm'}
           onBack={() => setScreen('select')}
-          onConfirm={() => {
-            setGame(newGame(previewTeam, comp));
+          onConfirm={() => setScreen('role')}
+        />
+      )}
+
+      {screen === 'role' && (
+        <RoleSelect
+          teamCode={previewTeam}
+          onBack={() => setScreen('squad')}
+          onPick={(role) => {
+            setGame(newGame(previewTeam, comp, role));
             setScreen('hub');
           }}
         />
@@ -395,6 +406,36 @@ function CompetitionSelect({ onPick }) {
   );
 }
 
+// ── 감독 역할 선택 화면 ────────────────────────────────────────────
+function RoleSelect({ teamCode, onPick, onBack }) {
+  const { t, tn, lang } = useLang();
+  const me = TEAMS[teamCode];
+  return (
+    <div className="lang-select">
+      <div className="lang-hero">
+        <div className="logo big">TACTIX <span>2026</span></div>
+        <h1>{t('role.title')}</h1>
+        <p>
+          {me && <><Flag code={me.code} size={20} /> <strong>{tn(me)}</strong> · </>}
+          {t('role.subtitle')}
+        </p>
+        <div className="role-cards">
+          {Object.entries(ROLES).map(([id, r]) => (
+            <button key={id} className="role-card" onClick={() => onPick(id)}>
+              <span className="role-icon">{r.icon}</span>
+              <span className="role-name">{r[lang]?.name ?? r.ko.name}</span>
+              <span className="role-desc">{r[lang]?.desc ?? r.ko.desc}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <button className="btn ghost" onClick={onBack}>{t('common.back')}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Hub({
   game, myGroup, standings, fixture, myKoMatch,
   showAllGroups, onToggleGroups, onPlayGroup, onPlayKo, onAutoSim, onRestart,
@@ -419,6 +460,7 @@ function Hub({
               ? t('hub.groupBadge', { g: myGroup, n: Math.min(game.matchday, 3) })
               : t('common.tournament')}
           </span>
+          <span className="badge">{t('role.badge', { name: roleLabel(game.role || DEFAULT_ROLE, lang) })}</span>
           {game.eliminated && <span className="badge danger-text">{t('common.eliminated')}</span>}
         </div>
         <button className="btn danger" onClick={onRestart}>{t('common.toHome')}</button>
